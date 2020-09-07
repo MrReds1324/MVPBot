@@ -6,7 +6,7 @@ from discord import Embed, HTTPException
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from google_sheets import get_sheet_data
+from google_sheets import get_sheet_data, create_sheet, copy_paste, get_sheetid
 
 load_dotenv()
 logger = logging.getLogger('discord')
@@ -23,26 +23,49 @@ bot = commands.Bot(command_prefix='!!')
 
 def filter_sheet(filter_date, mvp_sheet):
     filtered_sheet = []
-    for mvp_row in mvp_sheet[2:]:
-        new_time = datetime.strptime(mvp_row[5], "%H:%M %p").time()
-        new_datetime = datetime.combine(filter_date.date(), new_time)
-        if new_datetime >= filter_date and mvp_row[3]:
-            filtered_sheet.append(mvp_row)
+    if len(mvp_sheet) >= 2:
+        for mvp_row in mvp_sheet[2:]:
+            new_time = datetime.strptime(mvp_row[5], "%I:%M %p").time()
+            new_datetime = datetime.combine(filter_date.date(), new_time)
+            if new_datetime >= filter_date and mvp_row[3]:
+                filtered_sheet.append(mvp_row)
     return filtered_sheet
 
 
-def get_tables():
+def get_todays_sheet():
     current_date = datetime.utcnow()
-    trigger_date = datetime.utcnow().replace(hour=21, minute=0, second=0)
-    tomorrow = None
-    if current_date >= trigger_date:
-        tomorrow = current_date + timedelta(days=1)
+    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:M', spreadsheet_id))
 
 
-def build_embed_from_sheet(sheet):
-    sheet_embed = Embed(title=f'Upcoming MVPS - {datetime.utcnow().strftime("%D %I:%H %p")} UTC')
+def get_tomorrows_sheet():
+    tomorrow_date = datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
+    return filter_sheet(tomorrow_date, get_sheet_data(f'{tomorrow_date.strftime("%D")}!A:M', spreadsheet_id))
+
+
+def get_both_sheets():
+    tomorrow_date = datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
+    current = get_todays_sheet()
+    current.append([tomorrow_date.strftime('%D %I:%H %p')])
+    tomorrow = get_tomorrows_sheet()
+    current.extend(tomorrow)
+    return current
+
+
+def build_tomorrow_sheet():
+    tomorrow_date = datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
+    if create_sheet(tomorrow_date.strftime('%D'), spreadsheet_id):
+        copy_from_id = get_sheetid('Copy Me!', spreadsheet_id)
+        copy_to_id = get_sheetid(tomorrow_date.strftime('%D'), spreadsheet_id)
+        copy_paste(copy_from_id, copy_to_id, spreadsheet_id)
+
+
+def build_embed_from_sheet(date_time, sheet):
+    sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%H %p")} UTC')
     for line in sheet:
-        sheet_embed.add_field(name=f'{line[5]} UTC - {line[6]} PST - {line[7]} CEST - {line[9]} AEST', value=f'Location: {line[3]}', inline=False)
+        if len(line) > 1:
+            sheet_embed.add_field(name=f'{line[5]} UTC - {line[6]} PST - {line[7]} CEST - {line[9]} AEST', value=f'Location: {line[3]}', inline=False)
+        else:
+            sheet_embed.add_field(name=f'{line[0]} UTC', value="Server Reset", inline=False)
     return sheet_embed
 
 
@@ -63,9 +86,9 @@ async def on_message(message):
 
 
 @bot.command(name='mvp', help='Show the current MVP list')
-async def update_prefix(ctx):
-    table = get_sheet_data('9/4/20!A:M')
-    await ctx.send(embed=build_embed_from_sheet(table))
+async def get_mvp(ctx):
+    table = get_both_sheets()
+    await ctx.send(embed=build_embed_from_sheet(datetime.utcnow(), table))
 
 
 @bot.event
