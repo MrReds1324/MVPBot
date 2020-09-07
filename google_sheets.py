@@ -35,7 +35,7 @@ def create_sheet(sheet_name, spreadsheet_id):
     try:
         sheet = get_service().spreadsheets()
         batch_update_spreadsheet_request_body = {"requests": [{"addSheet": {"properties": {"title": sheet_name}}}]}
-        request = sheet.batchUpdate(spreadsheetId=spreadsheet_id, body=batch_update_spreadsheet_request_body).execute()
+        sheet.batchUpdate(spreadsheetId=spreadsheet_id, body=batch_update_spreadsheet_request_body).execute()
         return True
     except:
         return False
@@ -73,8 +73,7 @@ def copy_paste(source_id, destination_id, spreadsheet_id):
             },
             "pasteType": "PASTE_NORMAL",
             "pasteOrientation": "NORMAL"}}]}
-        request = sheet.batchUpdate(spreadsheetId=spreadsheet_id, body=batch_update_spreadsheet_request_body)
-        response = request.execute()
+        sheet.batchUpdate(spreadsheetId=spreadsheet_id, body=batch_update_spreadsheet_request_body).execute()
         return True
     except:
         return False
@@ -87,7 +86,3 @@ def get_sheet_data(get_range, spreadsheet_id):
         return result.get('values', [])
     except:
         return []
-
-
-get_sheetid('')
-# get_sheet_data()
