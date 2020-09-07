@@ -9,16 +9,6 @@ from googleapiclient.discovery import build
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-
-def filter_sheet(filter_date, mvp_sheet):
-    filtered_sheet = []
-    for mvp_row in mvp_sheet[2:]:
-        new_time = datetime.strptime(mvp_row[5], "%H:%M %p").time()
-        new_datetime = datetime.combine(filter_date.date(), new_time)
-        if new_datetime >= filter_date and mvp_row[3]:
-            filtered_sheet.append(mvp_row)
-    return filtered_sheet
-
 def get_service():
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is

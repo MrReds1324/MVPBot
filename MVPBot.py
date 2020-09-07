@@ -20,6 +20,17 @@ spreadsheet_id = os.getenv('SPREADSHEET_ID')
 
 bot = commands.Bot(command_prefix='!!')
 
+
+def filter_sheet(filter_date, mvp_sheet):
+    filtered_sheet = []
+    for mvp_row in mvp_sheet[2:]:
+        new_time = datetime.strptime(mvp_row[5], "%H:%M %p").time()
+        new_datetime = datetime.combine(filter_date.date(), new_time)
+        if new_datetime >= filter_date and mvp_row[3]:
+            filtered_sheet.append(mvp_row)
+    return filtered_sheet
+
+
 def get_tables():
     current_date = datetime.utcnow()
     trigger_date = datetime.utcnow().replace(hour=21, minute=0, second=0)
@@ -27,11 +38,13 @@ def get_tables():
     if current_date >= trigger_date:
         tomorrow = current_date + timedelta(days=1)
 
+
 def build_embed_from_sheet(sheet):
     sheet_embed = Embed(title=f'Upcoming MVPS - {datetime.utcnow().strftime("%D %I:%H %p")} UTC')
     for line in sheet:
         sheet_embed.add_field(name=f'{line[5]} UTC - {line[6]} PST - {line[7]} CEST - {line[9]} AEST', value=f'Location: {line[3]}', inline=False)
     return sheet_embed
+
 
 @bot.event
 async def on_ready():
