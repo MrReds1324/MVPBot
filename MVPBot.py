@@ -21,6 +21,19 @@ spreadsheet_id = os.getenv('SPREADSHEET_ID')
 bot = commands.Bot(command_prefix='!!')
 
 
+def get_tomorrows_date():
+    return datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
+
+
+def determine_wait(cur_minute):
+    if cur_minute <= 10:
+        return 60 * (10 - cur_minute)
+    elif cur_minute <= 25:
+        return 60 * (25 - cur_minute)
+    elif cur_minute <= 40:
+        return 60 * (40 - cur_minute)
+    else:
+        return 60 * (55 - cur_minute)
 def filter_sheet(filter_date, mvp_sheet):
     filtered_sheet = []
     if len(mvp_sheet) >= 2:
