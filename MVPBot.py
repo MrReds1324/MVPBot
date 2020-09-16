@@ -71,11 +71,22 @@ def build_tomorrow_sheet():
         copy_paste(copy_from_id, copy_to_id, spreadsheet_id)
 
 
-def build_embed_from_sheet(date_time, sheet):
-    sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%H %p")} UTC')
+def build_embed(date_time):
+    next_day_trigger = datetime.utcnow().replace(hour=21, minute=0, second=0)
+
+    if date_time >= next_day_trigger:
+        # If the sheet does not exist yet - build it
+        if not get_sheetid(get_tomorrows_date().strftime('%D'), spreadsheet_id):
+            build_tomorrow_sheet()
+
+        sheet = get_both_sheets()
+    else:
+        sheet = get_todays_sheet()
+
+    sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC')
     for line in sheet:
         if len(line) > 1:
-            sheet_embed.add_field(name=f'{line[5]} UTC - {line[6]} PST - {line[7]} CEST - {line[9]} AEST', value=f'Location: {line[3]}', inline=False)
+            sheet_embed.add_field(name=f'{line[5]} UTC - {line[6]} PST - {line[8]} EST - {line[9]} CEST - {line[9]} AEST', value=f'Location: {line[3]}', inline=False)
         else:
             sheet_embed.add_field(name=f'{line[0]} UTC', value="Server Reset", inline=False)
     return sheet_embed
