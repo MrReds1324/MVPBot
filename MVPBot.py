@@ -1,10 +1,12 @@
 import logging
 import os
+from asyncio import sleep
 from datetime import datetime, timedelta
 
 from discord import Embed, HTTPException
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
+from pymongo import MongoClient
 
 from google_sheets import get_sheet_data, create_sheet, copy_paste, get_sheetid
 
@@ -17,6 +19,8 @@ logger.addHandler(handler)
 
 token = os.getenv('DISCORD_TOKEN')
 spreadsheet_id = os.getenv('SPREADSHEET_ID')
+client = MongoClient(os.getenv('MONGODB_URL'))
+db = client.mvpbot
 
 bot = commands.Bot(command_prefix='!!')
 
@@ -34,6 +38,8 @@ def determine_wait(cur_minute):
         return 60 * (40 - cur_minute)
     else:
         return 60 * (55 - cur_minute)
+
+
 def filter_sheet(filter_date, mvp_sheet):
     filtered_sheet = []
     if len(mvp_sheet) >= 2:
@@ -108,10 +114,9 @@ async def on_message(message):
         return
 
 
-@bot.command(name='mvp', help='Show the current MVP list')
+@bot.command(name='mvp', help='Show the upcoming mvps')
 async def get_mvp(ctx):
-    table = get_both_sheets()
-    await ctx.send(embed=build_embed_from_sheet(datetime.utcnow(), table))
+    await ctx.send(embed=build_embed(datetime.utcnow()))
 
 
 @bot.command(name='register', help='Register a channel for the bot post MVPs to')
