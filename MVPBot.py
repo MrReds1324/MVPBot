@@ -47,25 +47,24 @@ def filter_sheet(filter_date, mvp_sheet):
 
 def get_todays_sheet():
     current_date = datetime.utcnow()
-    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:M', spreadsheet_id))
+    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id))
 
 
 def get_tomorrows_sheet():
-    tomorrow_date = datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
-    return filter_sheet(tomorrow_date, get_sheet_data(f'{tomorrow_date.strftime("%D")}!A:M', spreadsheet_id))
+    tomorrows_date = get_tomorrows_date()
+    return filter_sheet(tomorrows_date, get_sheet_data(f'{tomorrows_date.strftime("%D")}!A:Z', spreadsheet_id))
 
 
 def get_both_sheets():
-    tomorrow_date = datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
     current = get_todays_sheet()
-    current.append([tomorrow_date.strftime('%D %I:%H %p')])
+    current.append([get_tomorrows_date().strftime('%D %I:%H %p')])
     tomorrow = get_tomorrows_sheet()
     current.extend(tomorrow)
     return current
 
 
 def build_tomorrow_sheet():
-    tomorrow_date = datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
+    tomorrow_date = get_tomorrows_date()
     if create_sheet(tomorrow_date.strftime('%D'), spreadsheet_id):
         copy_from_id = get_sheetid('Copy Me!', spreadsheet_id)
         copy_to_id = get_sheetid(tomorrow_date.strftime('%D'), spreadsheet_id)
