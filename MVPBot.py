@@ -101,6 +101,22 @@ async def on_message(message):
 async def get_mvp(ctx):
     table = get_both_sheets()
     await ctx.send(embed=build_embed_from_sheet(datetime.utcnow(), table))
+
+
+@bot.command(name='register', help='Register a channel for the bot post MVPs to')
+@commands.has_permissions(administrator=True)
+async def register_channel(ctx):
+    db.channels.update_one({'_name': 'subscribed_channels'}, {'$push': {'_subscribed_channels': ctx.channel.id}})
+    await ctx.send("Channel registered")
+
+
+@bot.command(name='unregister', help='Unregister a channel for the bot post MVPs to')
+@commands.has_permissions(administrator=True)
+async def register_channel(ctx):
+    db.channels.update_one({'_name': 'subscribed_channels'}, {'$pull': {'_subscribed_channels': ctx.channel.id}})
+    await ctx.send("Channel unregistered")
+
+
 @tasks.loop(minutes=15)
 async def scheduled_mvp():
     # Wait until the appropriate time to post MVPs
