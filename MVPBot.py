@@ -2,6 +2,7 @@ import logging
 import os
 from asyncio import sleep
 from datetime import datetime, timedelta
+import logging
 
 from discord import Embed, HTTPException
 from discord.ext import commands, tasks
