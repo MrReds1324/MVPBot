@@ -44,9 +44,9 @@ def filter_sheet(filter_date, mvp_sheet):
     filtered_sheet = []
     if len(mvp_sheet) >= 2:
         for mvp_row in mvp_sheet[2:]:
-            new_time = datetime.strptime(mvp_row[5], "%I:%M %p").time()
+            new_time = datetime.strptime(mvp_row[6], "%I:%M %p").time()
             new_datetime = datetime.combine(filter_date.date(), new_time)
-            if new_datetime >= filter_date and mvp_row[3]:
+            if new_datetime >= filter_date and mvp_row[4]:
                 filtered_sheet.append(mvp_row)
     return filtered_sheet
 
@@ -92,7 +92,10 @@ def build_embed(date_time):
     sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC')
     for line in sheet:
         if len(line) > 1:
-            sheet_embed.add_field(name=f'{line[5]} UTC - {line[6]} PST - {line[8]} EST - {line[9]} CEST - {line[9]} AEST', value=f'Location: {line[3]}', inline=False)
+            if line[3]:
+                sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[11]} AEST', value=f'Location: {line[4]} --- Teleport To: {line[3]}', inline=False)
+            else:
+                sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[11]} AEST', value=f'Location: {line[4]}', inline=False)
         else:
             sheet_embed.add_field(name=f'{line[0]} UTC', value="Server Reset", inline=False)
     return sheet_embed
