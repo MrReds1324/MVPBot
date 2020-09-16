@@ -2,7 +2,6 @@ import logging
 import os
 from asyncio import sleep
 from datetime import datetime, timedelta
-import logging
 
 from discord import Embed, HTTPException
 from discord.ext import commands, tasks
@@ -18,7 +17,7 @@ handler = logging.FileHandler(filename='err.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-token = os.getenv('DISCORD_TOKEN')
+token = os.getenv('MVP_DISCORD_TOKEN')
 spreadsheet_id = os.getenv('SPREADSHEET_ID')
 client = MongoClient(os.getenv('MONGODB_URL'))
 db = client.mvpbot
@@ -132,7 +131,7 @@ async def register_channel(ctx):
 
 @bot.command(name='unregister', help='Unregister a channel for the bot post MVPs to')
 @commands.has_permissions(administrator=True)
-async def register_channel(ctx):
+async def unregister_channel(ctx):
     db.channels.update_one({'_name': 'subscribed_channels'}, {'$pull': {'_subscribed_channels': ctx.channel.id}})
     await ctx.send("Channel unregistered")
 
