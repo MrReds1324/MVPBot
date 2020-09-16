@@ -101,6 +101,21 @@ async def on_message(message):
 async def get_mvp(ctx):
     table = get_both_sheets()
     await ctx.send(embed=build_embed_from_sheet(datetime.utcnow(), table))
+@tasks.loop(minutes=15)
+async def scheduled_mvp():
+    # Wait until the appropriate time to post MVPs
+    await sleep(determine_wait(datetime.utcnow().minute))
+
+    # Get all the subscribed channels
+    subscribed_channels = db.channels.find_one({'_name': 'subscribed_channels'})
+
+    # Post to all the channels
+    print(f'{datetime.utcnow()} - Posting to all channels')
+    if subscribed_channels and subscribed_channels.get('_subscribed_channels'):
+        for ch in subscribed_channels.get('_subscribed_channels'):
+            message_channel = bot.get_channel(ch)
+            if message_channel:
+                await message_channel.send(embed=build_embed(datetime.utcnow()))
 
 
 @bot.event
@@ -114,5 +129,5 @@ async def on_command_error(ctx, error):
         print(error)
         logger.error('{}: MESSAGE: {}'.format(error, ctx.message.content))
 
-
+scheduled_mvp.start()
 bot.run(token)
