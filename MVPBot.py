@@ -157,10 +157,16 @@ async def scheduled_mvp():
         for ch in subscribed_channels.get('_subscribed_channels'):
             message_channel = bot.get_channel(ch)
             if message_channel:
-                last_message = await message_channel.fetch_message(message_channel.last_message_id)
+                try:
+                    last_message = await message_channel.fetch_message(message_channel.last_message_id)
+                except:
+                    print(f'Failed to get the last message for {ch}')
+                    last_message = None
                 if last_message and last_message.author == bot.user:
+                    print(f'Editing message in {ch}')
                     await last_message.edit(embed=embed)
                 else:
+                    print(f'Sending new message in {ch}')
                     await message_channel.send(embed=embed)
 
 
