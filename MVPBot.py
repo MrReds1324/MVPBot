@@ -93,9 +93,9 @@ def build_embed(date_time):
     for line in sheet:
         if len(line) > 1:
             if line[3]:
-                sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[11]} AEST', value=f'Location: {line[4]} --- Teleport To: {line[3]}', inline=False)
+                sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST', value=f'Location: {line[4]} --- Teleport To: {line[3]}', inline=False)
             else:
-                sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[11]} AEST', value=f'Location: {line[4]}', inline=False)
+                sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST', value=f'Location: {line[4]}', inline=False)
         else:
             sheet_embed.add_field(name=f'{line[0]} UTC', value="Server Reset", inline=False)
     return sheet_embed
@@ -125,6 +125,12 @@ async def get_mvp(ctx):
 @bot.command(name='register', help='Register a channel for the bot post MVPs to')
 @commands.has_permissions(administrator=True)
 async def register_channel(ctx):
+    subscribed_channels = db.channels.find_one({'_name': 'subscribed_channels'})
+
+    if subscribed_channels and subscribed_channels.get('_subscribed_channels'):
+        if ctx.channel.id in subscribed_channels.get('_subscribed_channels'):
+            await ctx.send("Channel already registered")
+            return
     db.channels.update_one({'_name': 'subscribed_channels'}, {'$push': {'_subscribed_channels': ctx.channel.id}})
     await ctx.send("Channel registered")
 
