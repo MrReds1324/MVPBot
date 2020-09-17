@@ -147,10 +147,15 @@ async def scheduled_mvp():
     # Post to all the channels
     print(f'{datetime.utcnow()} - Posting to all channels')
     if subscribed_channels and subscribed_channels.get('_subscribed_channels'):
+        embed = build_embed(datetime.utcnow())
         for ch in subscribed_channels.get('_subscribed_channels'):
             message_channel = bot.get_channel(ch)
             if message_channel:
-                await message_channel.send(embed=build_embed(datetime.utcnow()))
+                last_message = message_channel.fetch_message(message_channel.last_message_id)
+                if last_message and last_message.author == bot.user:
+                    await last_message.edit(embed=embed)
+                else:
+                    await message_channel.send(embed=embed)
 
 
 @bot.event
