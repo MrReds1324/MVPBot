@@ -167,7 +167,10 @@ async def scheduled_mvp():
                     await last_message.edit(embed=embed)
                 else:
                     print(f'Sending new message in {ch}')
-                    await message_channel.send(embed=embed)
+                    try:
+                        await message_channel.send(embed=embed)
+                    except:
+                        print(f'Failed to send new message in {ch}')
 
 
 @bot.event
