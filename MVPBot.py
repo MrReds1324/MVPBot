@@ -80,7 +80,7 @@ def build_tomorrow_sheet():
 
 
 def build_embed(date_time):
-    next_day_trigger = datetime.utcnow().replace(hour=21, minute=0, second=0)
+    next_day_trigger = datetime.utcnow().replace(hour=18, minute=0, second=0)
 
     if date_time >= next_day_trigger:
         # If the sheet does not exist yet - build it
