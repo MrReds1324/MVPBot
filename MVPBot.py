@@ -36,8 +36,10 @@ def determine_wait(cur_minute):
         return 60 * (25 - cur_minute)
     elif cur_minute <= 40:
         return 60 * (40 - cur_minute)
-    else:
+    elif cur_minute <= 55:
         return 60 * (55 - cur_minute)
+    else:
+        return 60 * (70 - cur_minute)
 
 
 def filter_sheet(filter_date, mvp_sheet):
