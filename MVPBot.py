@@ -66,8 +66,7 @@ def get_tomorrows_sheet():
 def get_both_sheets():
     current = get_todays_sheet()
     current.append([get_tomorrows_date().strftime('%D %I:%H %p')])
-    tomorrow = get_tomorrows_sheet()
-    current.extend(tomorrow)
+    current.extend(get_tomorrows_sheet())
     return current
 
 
