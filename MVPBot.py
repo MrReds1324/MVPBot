@@ -46,10 +46,13 @@ def filter_sheet(filter_date, mvp_sheet):
     filtered_sheet = []
     if len(mvp_sheet) >= 2:
         for mvp_row in mvp_sheet[2:]:
-            new_time = datetime.strptime(mvp_row[6], "%I:%M %p").time()
-            new_datetime = datetime.combine(filter_date.date(), new_time)
-            if new_datetime >= filter_date and mvp_row[4]:
-                filtered_sheet.append(mvp_row)
+            try:
+                new_time = datetime.strptime(mvp_row[6], "%I:%M %p").time()
+                new_datetime = datetime.combine(filter_date.date(), new_time)
+                if new_datetime >= filter_date and mvp_row[4]:
+                    filtered_sheet.append(mvp_row)
+            except:
+                logger.error(f"Error occured when attempting to filter row {mvp_row}")
     return filtered_sheet
 
 
