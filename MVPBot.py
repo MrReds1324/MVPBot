@@ -76,7 +76,7 @@ def get_both_sheets():
 def build_tomorrow_sheet():
     tomorrow_date = get_tomorrows_date()
     if create_sheet(tomorrow_date.strftime('%D'), spreadsheet_id):
-        copy_from_id = get_sheetid('Copy Me!', spreadsheet_id)
+        copy_from_id = get_sheetid('Copy Me for xx15/45!', spreadsheet_id)
         copy_to_id = get_sheetid(tomorrow_date.strftime('%D'), spreadsheet_id)
         copy_paste(copy_from_id, copy_to_id, spreadsheet_id)
 
