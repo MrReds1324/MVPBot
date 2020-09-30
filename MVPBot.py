@@ -174,6 +174,7 @@ async def scheduled_mvp():
                         await message_channel.send(embed=embed)
                     except:
                         print(f'Failed to send new message in {ch}')
+    print('Finished posting to all channels')
 
 
 @bot.event
