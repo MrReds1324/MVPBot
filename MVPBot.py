@@ -97,7 +97,7 @@ def build_embed(date_time):
     for line in sheet:
         if len(line) > 1:
             sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST',
-                                  value=f'Location: {line[4]}{" --- Teleport To: " + line[3] if line[3] else ""}{" --- Discord:" + line[0] if line[0] else ""}',
+                                  value=f'Location: {line[4]}{" --- Teleport To: " + line[3] if line[3] else ""}{" --- Discord: " + line[0] if line[0] else ""}',
                                   inline=False)
         else:
             sheet_embed.add_field(name=f'{line[0]} UTC', value="Server Reset", inline=False)
