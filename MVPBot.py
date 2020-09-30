@@ -96,10 +96,9 @@ def build_embed(date_time):
     sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC')
     for line in sheet:
         if len(line) > 1:
-            if line[3]:
-                sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST', value=f'Location: {line[4]} --- Teleport To: {line[3]}', inline=False)
-            else:
-                sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST', value=f'Location: {line[4]}', inline=False)
+            sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST',
+                                  value=f'Location: {line[4]}{" --- Teleport To: " + line[3] if line[3] else ""}{" --- Discord:" + line[0] if line[0] else ""}',
+                                  inline=False)
         else:
             sheet_embed.add_field(name=f'{line[0]} UTC', value="Server Reset", inline=False)
     return sheet_embed
@@ -187,6 +186,7 @@ async def on_command_error(ctx, error):
         await ctx.send('An error occurred! Please try again')
         print(error)
         logger.error('{}: MESSAGE: {}'.format(error, ctx.message.content))
+
 
 scheduled_mvp.start()
 bot.run(token)
