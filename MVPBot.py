@@ -194,5 +194,5 @@ scheduled_mvp.start()
 try:
     bot.run(token)
 except Exception as e:
-    print(e)
+    print(f'{datetime.utcnow()}: {e}', file=sys.stderr)
     sys.exit(-1)
