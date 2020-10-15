@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from asyncio import sleep
 from datetime import datetime, timedelta
 
@@ -190,4 +191,8 @@ async def on_command_error(ctx, error):
 
 
 scheduled_mvp.start()
-bot.run(token)
+try:
+    bot.run(token)
+except Exception as e:
+    print(e)
+    sys.exit(-1)
