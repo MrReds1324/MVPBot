@@ -43,10 +43,10 @@ def determine_wait(cur_minute):
         return 60 * (70 - cur_minute)
 
 
-def filter_sheet(filter_date, mvp_sheet, reset_period=False):
+def filter_sheet(filter_date, mvp_sheet):
     filtered_sheet = []
+    next_mvp_time = None
     if len(mvp_sheet) >= 2:
-        time_gap = None
         lastest_mvp = filter_date
         for mvp_row in mvp_sheet[2:]:
             try:
@@ -54,23 +54,19 @@ def filter_sheet(filter_date, mvp_sheet, reset_period=False):
                 new_datetime = datetime.combine(filter_date.date(), new_time)
                 if new_datetime >= filter_date:
                     if mvp_row[4]:
-                        if time_gap:
-                            filtered_sheet.append(['MVP GAP', time_gap])
-                            time_gap = None
+                        time_gap = new_datetime - lastest_mvp
+                        if len(filtered_sheet) == 0:
+                            next_mvp_time = new_datetime - lastest_mvp
+                        elif time_gap > timedelta(minutes=90):
+                            filtered_sheet.append(['MVP GAP', new_datetime - lastest_mvp])
                         # Add the row to the sheet
                         filtered_sheet.append(mvp_row)
                         # Save the latest mvp time to determine gaps
                         lastest_mvp = new_datetime
-                    else:
-                        time_gap = new_datetime - lastest_mvp
             except:
                 logger.error(f"Error occured when attempting to filter row {mvp_row}")
 
-        if reset_period and time_gap:
-            # Have to add an extra 0.5 to account for the fact that gaps dont start counting until the next time slot
-            filtered_sheet.append(['MVP GAP', time_gap])
-
-    return filtered_sheet
+    return filtered_sheet, next_mvp_time
 
 
 def get_todays_sheet(reset_period=False):
