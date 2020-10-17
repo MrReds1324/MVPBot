@@ -69,9 +69,9 @@ def filter_sheet(filter_date, mvp_sheet):
     return filtered_sheet, next_mvp_time
 
 
-def get_todays_sheet(reset_period=False):
+def get_todays_sheet():
     current_date = datetime.utcnow()
-    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), reset_period)
+    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id))
 
 
 def get_tomorrows_sheet():
