@@ -72,9 +72,9 @@ def filter_sheet(filter_date, mvp_sheet, reset_period=False):
     return filtered_sheet
 
 
-def get_todays_sheet():
+def get_todays_sheet(reset_period=False):
     current_date = datetime.utcnow()
-    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id))
+    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), reset_period)
 
 
 def get_tomorrows_sheet():
@@ -83,7 +83,8 @@ def get_tomorrows_sheet():
 
 
 def get_both_sheets():
-    current = get_todays_sheet()
+    # If we are getting both sheets, then we are in the reset period so pass in true to todays sheet
+    current = get_todays_sheet(True)
     current.append([get_tomorrows_date().strftime('%D %I:%H %p')])
     current.extend(get_tomorrows_sheet())
     return current
