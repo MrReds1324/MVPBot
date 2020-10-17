@@ -81,10 +81,11 @@ def get_tomorrows_sheet():
 
 def get_both_sheets():
     # If we are getting both sheets, then we are in the reset period so pass in true to todays sheet
-    current = get_todays_sheet(True)
+    current, next_mvp_time = get_todays_sheet()
     current.append([get_tomorrows_date().strftime('%D %I:%H %p')])
-    current.extend(get_tomorrows_sheet())
-    return current
+    # We only care about the mvp sheet for the next day
+    current.extend(get_tomorrows_sheet()[0])
+    return current, next_mvp_time
 
 
 def build_tomorrow_sheet():
