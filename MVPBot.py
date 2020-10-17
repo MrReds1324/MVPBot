@@ -114,7 +114,8 @@ def build_embed(date_time):
     else:
         next_mvp_parts = ['--', '--']
 
-    sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC (Next in {next_mvp_parts[0] + ":" + next_mvp_parts[1]})')
+    sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC',
+                        description=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```')
     for line in sheet:
         if len(line) > 2:
             sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST',
