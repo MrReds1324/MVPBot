@@ -104,11 +104,17 @@ def build_embed(date_time):
         if not get_sheetid(get_tomorrows_date().strftime('%D'), spreadsheet_id):
             build_tomorrow_sheet()
 
-        sheet = get_both_sheets()
+        sheet, next_mvp_time = get_both_sheets()
     else:
-        sheet = get_todays_sheet()
+        sheet, next_mvp_time = get_todays_sheet()
 
-    sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC')
+    # Added check to mvp time that it is not None
+    if next_mvp_time:
+        next_mvp_parts = str(next_mvp_time).split(':')
+    else:
+        next_mvp_parts = ['--', '--']
+
+    sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC (Next in {next_mvp_parts[0] + ":" + next_mvp_parts[1]})')
     for line in sheet:
         if len(line) > 2:
             sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST',
