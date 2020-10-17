@@ -112,7 +112,7 @@ def build_embed(date_time):
     if next_mvp_time:
         next_mvp_parts = str(next_mvp_time).split(':')
     else:
-        next_mvp_parts = ['--', '--']
+        next_mvp_parts = ['--', '--', '--']
 
     sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC',
                         description=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```')
