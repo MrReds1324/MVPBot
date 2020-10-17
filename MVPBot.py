@@ -30,19 +30,6 @@ def get_tomorrows_date():
     return datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
 
 
-def determine_wait(cur_minute):
-    if cur_minute <= 10:
-        return 60 * (10 - cur_minute)
-    elif cur_minute <= 25:
-        return 60 * (25 - cur_minute)
-    elif cur_minute <= 40:
-        return 60 * (40 - cur_minute)
-    elif cur_minute <= 55:
-        return 60 * (55 - cur_minute)
-    else:
-        return 60 * (70 - cur_minute)
-
-
 def filter_sheet(filter_date, mvp_sheet):
     filtered_sheet = []
     next_mvp_time = None
@@ -114,7 +101,7 @@ def build_embed(date_time):
     else:
         next_mvp_parts = ['--', '--', '--']
 
-    sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC',
+    sheet_embed = Embed(title=f'Upcoming MVPs - {date_time.strftime("%D %I:%M %p")} UTC',
                         description=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```')
     for line in sheet:
         if len(line) > 2:
@@ -171,10 +158,8 @@ async def unregister_channel(ctx):
     await ctx.send("Channel unregistered")
 
 
-@tasks.loop(minutes=15)
+@tasks.loop(minutes=1)
 async def scheduled_mvp():
-    # Wait until the appropriate time to post MVPs
-    await sleep(determine_wait(datetime.utcnow().minute))
 
     # Get all the subscribed channels
     subscribed_channels = db.channels.find_one({'_name': 'subscribed_channels'})
