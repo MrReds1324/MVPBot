@@ -69,6 +69,7 @@ def filter_sheet(filter_date, mvp_sheet, reset_period=False):
         if reset_period and time_gap:
             # Have to add an extra 0.5 to account for the fact that gaps dont start counting until the next time slot
             filtered_sheet.append(['MVP GAP', time_gap])
+
     return filtered_sheet
 
 
@@ -112,10 +113,14 @@ def build_embed(date_time):
 
     sheet_embed = Embed(title=f'Upcoming MVPS - {date_time.strftime("%D %I:%M %p")} UTC')
     for line in sheet:
-        if len(line) > 1:
+        if len(line) > 2:
             sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEST',
                                   value=f'Location: {line[4]}{" --- Teleport To: " + (line[3] or line[1]) if (line[3] or line[1]) else ""}{" --- Discord: " + line[0] if line[0] else ""}',
                                   inline=False)
+        elif len(line) == 2:
+            # Split the timedelta into its parts so we can easily grab the hour and minutes separately
+            gap_parts = str(line[1]).split(':')
+            sheet_embed.add_field(name='- - - [BREAK] - - -', value=f'Break lasts {gap_parts[0]} hours and {gap_parts[1]} minutes', inline=False)
         else:
             sheet_embed.add_field(name=f'{line[0]} UTC', value="Server Reset", inline=False)
     return sheet_embed
