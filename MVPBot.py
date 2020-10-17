@@ -174,7 +174,6 @@ async def scheduled_mvp():
                 try:
                     last_message = await message_channel.fetch_message(message_channel.last_message_id)
                 except:
-                    print(f'Failed to get the last message for {ch}')
                     last_message = None
                 if last_message and last_message.author == bot.user:
                     print(f'Editing message in {ch}')
