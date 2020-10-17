@@ -125,7 +125,7 @@ def build_embed(date_time):
             gap_parts = str(line[1]).split(':')
             sheet_embed.add_field(name='- - - [BREAK] - - -', value=f'Break lasts {gap_parts[0]} hours and {gap_parts[1]} minutes', inline=False)
         else:
-            sheet_embed.add_field(name=f'{line[0]} UTC', value="Server Reset", inline=False)
+            sheet_embed.add_field(name=f'{line[0]} UTC', value="```yaml\nServer Reset\n```", inline=False)
     return sheet_embed
 
 
