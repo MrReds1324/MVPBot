@@ -57,7 +57,7 @@ def filter_sheet(filter_date, mvp_sheet):
                         time_gap = new_datetime - lastest_mvp
                         if len(filtered_sheet) == 0:
                             next_mvp_time = new_datetime - lastest_mvp
-                        elif time_gap > timedelta(minutes=90):
+                        elif time_gap > timedelta(minutes=60):
                             filtered_sheet.append(['MVP GAP', new_datetime - lastest_mvp])
                         # Add the row to the sheet
                         filtered_sheet.append(mvp_row)
