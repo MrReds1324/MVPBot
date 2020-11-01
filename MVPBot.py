@@ -105,7 +105,7 @@ def build_embed(date_time):
                         description=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```')
     for line in sheet:
         if len(line) > 2:
-            sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEDT',
+            sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PDT - {line[9]} EDT - {line[10]} CEST - {line[12]} AEDT',
                                   value=f'Location: {line[4]}{" --- Teleport To: " + (line[3] or line[1]) if (line[3] or line[1]) else ""}{" --- Discord: " + line[0] if line[0] else ""}',
                                   inline=False)
         elif len(line) == 2:
