@@ -184,6 +184,16 @@ async def whitelist_add(ctx, name, guild_id):
     await ctx.send(f"Registered server '{name}' with id '{guild_id}'")
 
 
+@bot.command(name='whitelist_remove', help='Unregister a guild from the bot\'s whitelist - !!whitelist_remove <server_id>')
+@commands.check(channel_check)
+async def whitelist_remove(ctx, guild_id):
+    # Find the guild and remove their related registered channels before removing their whitelist
+    guild = db.whitelist.find_one({'server_id': guild_id})
+    if guild:
+        for registered_channel in guild.get('registered_chs', []):
+            db.channels.delete_one({'_id': registered_channel})
+    db.whitelist.delete_one({'server_id': guild_id})
+    await ctx.send(f"Server with the id '{guild_id}' unregistered")
 @tasks.loop(minutes=1)
 async def scheduled_mvp():
 
