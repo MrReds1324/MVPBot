@@ -140,20 +140,19 @@ async def get_mvp(ctx):
 @bot.command(name='register', help='Register a channel for the bot post MVPs to')
 @commands.has_permissions(administrator=True)
 async def register_channel(ctx):
-    subscribed_channels = db.channels.find_one({'_name': 'subscribed_channels'})
+    subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
 
-    if subscribed_channels and subscribed_channels.get('_subscribed_channels'):
-        if ctx.channel.id in subscribed_channels.get('_subscribed_channels'):
-            await ctx.send("Channel already registered")
-            return
-    db.channels.update_one({'_name': 'subscribed_channels'}, {'$push': {'_subscribed_channels': ctx.channel.id}})
+    if subscribed_channel:
+        await ctx.send("Channel already registered")
+        return
+    db.channels.insert_one({'channel_id': ctx.channel.id})
     await ctx.send("Channel registered")
 
 
 @bot.command(name='unregister', help='Unregister a channel for the bot post MVPs to')
 @commands.has_permissions(administrator=True)
 async def unregister_channel(ctx):
-    db.channels.update_one({'_name': 'subscribed_channels'}, {'$pull': {'_subscribed_channels': ctx.channel.id}})
+    db.channels.delete_one({'channel_id': ctx.channel.id})
     await ctx.send("Channel unregistered")
 
 
@@ -161,28 +160,26 @@ async def unregister_channel(ctx):
 async def scheduled_mvp():
 
     # Get all the subscribed channels
-    subscribed_channels = db.channels.find_one({'_name': 'subscribed_channels'})
-
+    subscribed_channels = db.channels.find({})
     # Post to all the channels
     print(f'{datetime.utcnow()} - Posting to all channels')
-    if subscribed_channels and subscribed_channels.get('_subscribed_channels'):
-        embed = build_embed(datetime.utcnow())
-        for ch in subscribed_channels.get('_subscribed_channels'):
-            message_channel = bot.get_channel(ch)
-            if message_channel:
+    embed = build_embed(datetime.utcnow())
+    for ch_obj in subscribed_channels:
+        message_channel = bot.get_channel(ch_obj.get('channel_id'))
+        if message_channel:
+            try:
+                last_message = await message_channel.fetch_message(message_channel.last_message_id)
+            except:
+                last_message = None
+            if last_message and last_message.author == bot.user:
+                print(f'Editing message in {ch_obj.get("channel_id")}')
+                await last_message.edit(embed=embed)
+            else:
+                print(f'Sending new message in {ch_obj.get("channel_id")}')
                 try:
-                    last_message = await message_channel.fetch_message(message_channel.last_message_id)
+                    await message_channel.send(embed=embed)
                 except:
-                    last_message = None
-                if last_message and last_message.author == bot.user:
-                    print(f'Editing message in {ch}')
-                    await last_message.edit(embed=embed)
-                else:
-                    print(f'Sending new message in {ch}')
-                    try:
-                        await message_channel.send(embed=embed)
-                    except:
-                        print(f'Failed to send new message in {ch}')
+                    print(f'Failed to send new message in {ch_obj.get("channel_id")}')
     print(f'{datetime.utcnow()} - Finished posting to all channels')
 
 
