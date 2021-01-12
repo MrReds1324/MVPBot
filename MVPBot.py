@@ -116,6 +116,21 @@ def build_embed(date_time):
     return sheet_embed
 
 
+# Specify a special channel that have access to these commands
+def channel_check(ctx):
+    if ctx.channel.id == 737189349707350056:
+        return True
+    return False
+
+
+# guild must be in the whitelist to do commands
+def whitelist_check(ctx):
+    guild = db.whitelist.find_one({'server_id': str(ctx.channel.guild.id)})
+    if guild:
+        return True
+    return False
+
+
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
