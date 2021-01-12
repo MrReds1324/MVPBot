@@ -164,7 +164,8 @@ async def register_channel(ctx):
     if subscribed_channel:
         await ctx.send("Channel already registered")
         return
-    db.channels.insert_one({'channel_id': ctx.channel.id})
+    registered = db.channels.insert_one({'channel_id': ctx.channel.id})
+    db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$push': {'registered_chs': registered.inserted_id}})
     await ctx.send("Channel registered")
 
 
@@ -173,8 +174,15 @@ async def register_channel(ctx):
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def unregister_channel(ctx):
-    db.channels.delete_one({'channel_id': ctx.channel.id})
-    await ctx.send("Channel unregistered")
+    subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
+    if subscribed_channel:
+        db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$pull': {'registered_chs': subscribed_channel.get('_id')}})
+        db.channels.delete_one({'channel_id': ctx.channel.id})
+        await ctx.send("Channel unregistered")
+        return
+    await ctx.send("No channel to unregister")
+
+
 @bot.command(name='whitelist_add', help='Register a guild to the bot\'s whitelist - !!whitelist_add <name> <server_id>')
 @commands.check(channel_check)
 async def whitelist_add(ctx, name, guild_id):
