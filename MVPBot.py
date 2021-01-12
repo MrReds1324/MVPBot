@@ -204,7 +204,7 @@ async def scheduled_mvp():
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
-        await ctx.send('You do not have the correct role for this command.')
+        await ctx.send("¯\_(ツ)_/¯")
     elif isinstance(error, HTTPException):
         ctx.send('Something went wrong!')
     else:
