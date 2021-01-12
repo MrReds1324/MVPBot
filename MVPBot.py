@@ -133,12 +133,14 @@ async def on_message(message):
 
 
 @bot.command(name='mvp', help='Show the upcoming mvps')
+@commands.guild_only()
 async def get_mvp(ctx):
     await ctx.send(embed=build_embed(datetime.utcnow()))
 
 
 @bot.command(name='register', help='Register a channel for the bot post MVPs to')
 @commands.has_permissions(administrator=True)
+@commands.guild_only()
 async def register_channel(ctx):
     subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
 
@@ -151,6 +153,7 @@ async def register_channel(ctx):
 
 @bot.command(name='unregister', help='Unregister a channel for the bot post MVPs to')
 @commands.has_permissions(administrator=True)
+@commands.guild_only()
 async def unregister_channel(ctx):
     db.channels.delete_one({'channel_id': ctx.channel.id})
     await ctx.send("Channel unregistered")
