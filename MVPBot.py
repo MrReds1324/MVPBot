@@ -58,23 +58,33 @@ def filter_sheet(filter_date, mvp_sheet, search_slots=0):
     return filtered_sheet, next_mvp_time, open_mvp_slots
 
 
-def get_todays_sheet():
+def get_todays_sheet(search_slots=0):
     current_date = datetime.utcnow()
-    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id))
+    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
 
 
-def get_tomorrows_sheet():
+def get_tomorrows_sheet(search_slots=0):
     tomorrows_date = get_tomorrows_date()
-    return filter_sheet(tomorrows_date, get_sheet_data(f'{tomorrows_date.strftime("%D")}!A:Z', spreadsheet_id))
+    return filter_sheet(tomorrows_date, get_sheet_data(f'{tomorrows_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
 
 
-def get_both_sheets():
+def get_both_sheets(search_slots=0):
     # If we are getting both sheets, then we are in the reset period so pass in true to todays sheet
-    current, next_mvp_time = get_todays_sheet()
-    current.append([get_tomorrows_date().strftime('%D %I:%H %p')])
-    # We only care about the mvp sheet for the next day
-    current.extend(get_tomorrows_sheet()[0])
-    return current, next_mvp_time
+    current_sheet, next_mvp_time, open_slots = get_todays_sheet(search_slots)
+
+    # Calculate the number of slots to search for the next day before we have added the split
+    search_slots = search_slots - len(open_slots) if len(open_slots) < search_slots else 0
+
+    # Add the reset time split for mvps as well as open slots
+    next_date = get_tomorrows_date().strftime('%D %I:%H %p')
+    current_sheet.append([next_date])
+    open_slots.append([next_date])
+
+    # Get the mvp sheet and open slots for the next day if needed
+    next_sheet, _, next_open_slots = get_tomorrows_sheet(search_slots)
+    current_sheet.extend(next_sheet)
+    open_slots.extend(next_open_slots)
+    return current_sheet, next_mvp_time, open_slots
 
 
 def build_tomorrow_sheet():
@@ -85,7 +95,7 @@ def build_tomorrow_sheet():
         copy_paste(copy_from_id, copy_to_id, spreadsheet_id)
 
 
-def build_embed(date_time):
+def build_mvp_embed(date_time):
     next_day_trigger = datetime.utcnow().replace(hour=18, minute=0, second=0)
 
     if date_time >= next_day_trigger:
@@ -93,9 +103,9 @@ def build_embed(date_time):
         if not get_sheetid(get_tomorrows_date().strftime('%D'), spreadsheet_id):
             build_tomorrow_sheet()
 
-        sheet, next_mvp_time = get_both_sheets()
+        sheet, next_mvp_time, open_slots = get_both_sheets()
     else:
-        sheet, next_mvp_time = get_todays_sheet()
+        sheet, next_mvp_time, open_slots = get_todays_sheet()
 
     # Added check to mvp time that it is not None
     if next_mvp_time:
@@ -154,7 +164,7 @@ async def on_message(message):
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_mvp(ctx):
-    await ctx.send(embed=build_embed(datetime.utcnow()))
+    await ctx.send(embed=build_mvp_embed(datetime.utcnow()))
 
 
 @bot.command(name='register', help='Register a channel for the bot post MVPs to')
@@ -225,7 +235,7 @@ async def scheduled_mvp():
     subscribed_channels = db.channels.find({})
     # Post to all the channels
     print(f'{datetime.utcnow()} - Posting to all channels')
-    embed = build_embed(datetime.utcnow())
+    embed = build_mvp_embed(datetime.utcnow())
     for ch_obj in subscribed_channels:
         message_channel = bot.get_channel(ch_obj.get('channel_id'))
         if message_channel:
