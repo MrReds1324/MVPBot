@@ -29,8 +29,9 @@ def get_tomorrows_date():
     return datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
 
 
-def filter_sheet(filter_date, mvp_sheet):
+def filter_sheet(filter_date, mvp_sheet, search_slots=0):
     filtered_sheet = []
+    open_mvp_slots = []
     next_mvp_time = None
     if len(mvp_sheet) >= 2:
         lastest_mvp = filter_date
@@ -49,10 +50,12 @@ def filter_sheet(filter_date, mvp_sheet):
                         filtered_sheet.append(mvp_row)
                         # Save the latest mvp time to determine gaps
                         lastest_mvp = new_datetime
+                    elif len(open_mvp_slots) < search_slots:
+                        open_mvp_slots.append(mvp_row)
             except:
                 logger.error(f"Error occured when attempting to filter row {mvp_row}")
 
-    return filtered_sheet, next_mvp_time
+    return filtered_sheet, next_mvp_time, open_mvp_slots
 
 
 def get_todays_sheet():
