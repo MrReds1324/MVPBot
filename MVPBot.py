@@ -129,6 +129,36 @@ def build_mvp_embed(date_time):
     return sheet_embed
 
 
+def build_open_slots_embed(date_time, search_slots):
+    next_day_trigger = datetime.utcnow().replace(hour=18, minute=0, second=0)
+
+    if date_time >= next_day_trigger:
+        # If the sheet does not exist yet - build it
+        if not get_sheetid(get_tomorrows_date().strftime('%D'), spreadsheet_id):
+            build_tomorrow_sheet()
+
+        sheet, next_mvp_time, open_slots = get_both_sheets(search_slots)
+    else:
+        sheet, next_mvp_time, open_slots = get_todays_sheet(search_slots)
+
+    # Added check to mvp time that it is not None
+    if next_mvp_time:
+        next_mvp_parts = str(next_mvp_time).split(':')
+    else:
+        next_mvp_parts = ['--', '--', '--']
+
+    sheet_embed = Embed(title=f'Open MVP Timeslots - {date_time.strftime("%D %I:%M %p")} UTC',
+                        description=f'Showing the next {search_slots} timeslots')
+    for line in open_slots:
+        if len(line) > 2:
+            sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEDT',
+                                  value=f'--------------------------------------------------------------------------------------',
+                                  inline=False)
+        else:
+            sheet_embed.add_field(name=f'{line[0]} UTC', value="```yaml\nServer Reset\n```", inline=False)
+    return sheet_embed
+
+
 # Specify a special channel that have access to these commands
 def channel_check(ctx):
     if ctx.channel.id == 737189349707350056:
@@ -158,6 +188,13 @@ async def on_message(message):
     if message.content.startswith('!!'):
         await bot.process_commands(message)
         return
+
+
+@bot.command(name='timeslots', help='Show the next X available timeslots')
+@commands.guild_only()
+@commands.check(whitelist_check)
+async def get_timeslots(ctx, search_slots=1):
+    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots))
 
 
 @bot.command(name='mvp', help='Show the upcoming mvps')
