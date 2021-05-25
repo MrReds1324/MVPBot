@@ -64,22 +64,39 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0, filter_limit=4):
     return filtered_sheet, next_mvp_time, open_mvp_slots
 
 
-def get_todays_sheet(search_slots=0):
+def get_todays_sheet(search_slots=0, filter_limit=4):
+    """
+    :param search_slots: The number of unfilled mvp slots to find
+    :param filter_limit: The maximum number of mvp slots to be returned
+    :return:
+    """
     current_date = datetime.utcnow()
-    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
+    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots, filter_limit)
 
 
-def get_tomorrows_sheet(search_slots=0):
+def get_tomorrows_sheet(search_slots=0, filter_limit=4):
+    """
+    :param search_slots: The number of unfilled mvp slots to find
+    :param filter_limit: The maximum number of mvp slots to be returned
+    :return:
+    """
     tomorrows_date = get_tomorrows_date()
-    return filter_sheet(tomorrows_date, get_sheet_data(f'{tomorrows_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
+    return filter_sheet(tomorrows_date, get_sheet_data(f'{tomorrows_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots, filter_limit)
 
 
-def get_both_sheets(search_slots=0):
+def get_both_sheets(search_slots=0, filter_limit=4):
+    """
+    Get today + tomorrows google sheets filtered down
+    :param search_slots: The number of unfilled mvp slots to find
+    :param filter_limit: The maximum number of mvp slots to be returned
+    :return:
+    """
     # If we are getting both sheets, then we are in the reset period so pass in true to todays sheet
-    current_sheet, next_mvp_time, open_slots = get_todays_sheet(search_slots)
+    current_sheet, next_mvp_time, open_slots = get_todays_sheet(search_slots, filter_limit)
 
-    # Calculate the number of slots to search for the next day before we have added the split
+    # Calculate the number of slots to search for and filter limit
     search_slots = search_slots - len(open_slots) if len(open_slots) < search_slots else 0
+    filter_limit = filter_limit - len(current_sheet) if len(current_sheet) < filter_limit else 0
 
     # Add the reset time split for mvps as well as open slots
     next_date = get_tomorrows_date().strftime('%D %I:%H %p')
@@ -87,7 +104,7 @@ def get_both_sheets(search_slots=0):
     open_slots.append([next_date])
 
     # Get the mvp sheet and open slots for the next day if needed
-    next_sheet, _, next_open_slots = get_tomorrows_sheet(search_slots)
+    next_sheet, reset_mvp_time, next_open_slots = get_tomorrows_sheet(search_slots, filter_limit)
     current_sheet.extend(next_sheet)
     open_slots.extend(next_open_slots)
     return current_sheet, next_mvp_time, open_slots
