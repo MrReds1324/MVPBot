@@ -38,7 +38,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0, filter_limit=4):
     :param filter_limit: The maximum number of mvp slots to be returned
     :return:
     """
-    filter_end_date = filter_start_date + timedelta(minutes=(30 * (filter_limit + 1)))
+    filter_end_date = filter_start_date + timedelta(minutes=(30 * filter_limit))
     filtered_sheet = []
     open_mvp_slots = []
     next_mvp_time = None
@@ -50,7 +50,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0, filter_limit=4):
                 # Start by only looking at rows past the current date
                 if new_datetime >= filter_start_date:
                     if mvp_row[4]:
-                        if new_datetime < filter_end_date:
+                        if new_datetime <= filter_end_date:
                             # Calculate the how much longer until the next mvp
                             if len(filtered_sheet) == 0:
                                 next_mvp_time = new_datetime - filter_start_date
