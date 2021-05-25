@@ -29,28 +29,34 @@ def get_tomorrows_date():
     return datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
 
 
-def filter_sheet(filter_date, mvp_sheet, search_slots=0):
+def filter_sheet(filter_start_date, mvp_sheet, search_slots=0, filter_limit=4):
+    """
+
+    :param filter_start_date: The date that all rows must be past
+    :param mvp_sheet: The represntation of the google sheet
+    :param search_slots: The number of unfilled mvp slots to find
+    :param filter_limit: The maximum number of mvp slots to be returned
+    :return:
+    """
+    filter_end_date = filter_start_date + timedelta(minutes=(30 * (filter_limit + 1)))
     filtered_sheet = []
     open_mvp_slots = []
     next_mvp_time = None
     if len(mvp_sheet) >= 2:
-        lastest_mvp = filter_date
         for mvp_row in mvp_sheet[2:]:
             try:
                 new_time = datetime.strptime(mvp_row[6], "%I:%M %p").time()
-                new_datetime = datetime.combine(filter_date.date(), new_time)
-                if new_datetime >= filter_date:
+                new_datetime = datetime.combine(filter_start_date.date(), new_time)
+                # Start by only looking at rows past the current date
+                if new_datetime >= filter_start_date:
                     if mvp_row[4]:
-                        time_gap = new_datetime - lastest_mvp
-                        if len(filtered_sheet) == 0:
-                            next_mvp_time = new_datetime - lastest_mvp
-                        elif time_gap > timedelta(minutes=30):
-                            filtered_sheet.append(['MVP GAP', new_datetime - lastest_mvp])
-                        # Add the row to the sheet
-                        filtered_sheet.append(mvp_row)
-                        # Save the latest mvp time to determine gaps
-                        lastest_mvp = new_datetime
-                    elif len(open_mvp_slots) < search_slots:
+                        if new_datetime < filter_end_date:
+                            # Calculate the how much longer until the next mvp
+                            if len(filtered_sheet) == 0:
+                                next_mvp_time = new_datetime - filter_start_date
+                            # Add the row to the sheet
+                            filtered_sheet.append(mvp_row)
+                    elif search_slots and len(open_mvp_slots) < search_slots:
                         open_mvp_slots.append(mvp_row)
             except:
                 logger.error(f"Error occured when attempting to filter row {mvp_row}")
