@@ -110,7 +110,7 @@ def get_both_sheets(search_slots=0, filter_limit=4):
 
     # Determine time to next mvp around across reset boundary which is
     # Time between now and reset + the time between reset and the next mvp
-    if not next_mvp_time:
+    if not next_mvp_time and reset_mvp_time:
         next_mvp_time = (get_tomorrows_date() - datetime.utcnow()) + reset_mvp_time
 
     return current_sheet, next_mvp_time, open_slots
