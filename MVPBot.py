@@ -56,7 +56,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0, filter_limit=4):
                                 next_mvp_time = new_datetime - filter_start_date
                             # Add the row to the sheet
                             filtered_sheet.append(mvp_row)
-                    elif search_slots and len(open_mvp_slots) < search_slots:
+                    elif (not mvp_row[4] and not mvp_row[0] in ['FLAG', 'RESET']) and (search_slots and len(open_mvp_slots) < search_slots):
                         open_mvp_slots.append(mvp_row)
             except:
                 logger.error(f"Error occured when attempting to filter row {mvp_row}")
