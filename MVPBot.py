@@ -26,6 +26,20 @@ timezones = {}
 
 bot = commands.Bot(command_prefix='!!')
 
+col_to_tz = {
+    7: 'PST',
+    8: 'PDT',
+    9: 'CST',
+    10: 'CDT',
+    11: 'EST',
+    12: 'EDT',
+    13: 'CEST',
+    14: 'CEDT',
+    15: 'AEST',
+    16: 'AEDT',
+}
+
+
 def load_daylight_settings():
     day_light_settings = db.settings.find_one({'name': 'daylight_savings'})
     if day_light_settings:
@@ -165,9 +179,15 @@ def build_mvp_embed(date_time):
 
     sheet_embed = Embed(title=f'Upcoming MVPs - {date_time.strftime("%D %I:%M %p")} UTC',
                         description=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```')
+
+    pac_col = get_timezone_col('pacific')
+    east_col = get_timezone_col('eastern')
+    cen_e_col = get_timezone_col('central europe')
+    aus_col = get_timezone_col('australia')
+
     for line in sheet:
         if len(line) > 2:
-            sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEDT',
+            sheet_embed.add_field(name=f'{line[6]} UTC - {line[pac_col]} {col_to_tz[pac_col]} - {line[east_col]} {col_to_tz[east_col]} - {line[cen_e_col]} {col_to_tz[cen_e_col]} - {line[aus_col]} {col_to_tz[aus_col]}',
                                   value=f'Location: {line[4]}{" --- Teleport To: " + (line[3] or line[1]) if (line[3] or line[1]) else ""}{" --- Discord: " + line[0] if line[0] else ""}',
                                   inline=False)
         elif len(line) == 2:
@@ -199,9 +219,15 @@ def build_open_slots_embed(date_time, search_slots):
 
     sheet_embed = Embed(title=f'Open MVP Timeslots - {date_time.strftime("%D %I:%M %p")} UTC',
                         description=f'Showing the next {search_slots} timeslots')
+
+    pac_col = get_timezone_col('pacific')
+    east_col = get_timezone_col('eastern')
+    cen_e_col = get_timezone_col('central europe')
+    aus_col = get_timezone_col('australia')
+
     for line in open_slots:
         if len(line) > 2:
-            sheet_embed.add_field(name=f'{line[6]} UTC - {line[7]} PST - {line[9]} EST - {line[10]} CEST - {line[12]} AEDT',
+            sheet_embed.add_field(name=f'{line[6]} UTC - {line[pac_col]} {col_to_tz[pac_col]} - {line[east_col]} {col_to_tz[east_col]} - {line[cen_e_col]} {col_to_tz[cen_e_col]} - {line[aus_col]} {col_to_tz[aus_col]}',
                                   value=f'--------------------------------------------------------------------------------------',
                                   inline=False)
         else:
