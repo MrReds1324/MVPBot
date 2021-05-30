@@ -21,8 +21,29 @@ token = os.getenv('MVP_DISCORD_TOKEN')
 spreadsheet_id = os.getenv('SPREADSHEET_ID')
 client = MongoClient(os.getenv('MONGODB_URL'))
 db = client.mvpbot
+# Default timezones to empty dictionary to be loaded later
+timezones = {}
 
 bot = commands.Bot(command_prefix='!!')
+
+def load_daylight_settings():
+    day_light_settings = db.settings.find_one({'name': 'daylight_savings'})
+    if day_light_settings:
+        return day_light_settings
+    day_light_settings = {'name': 'daylight_savings',
+                          'pacific': {'offset': 0, 'base': 7},
+                          'central': {'offset': 0, 'base': 9},
+                          'eastern': {'offset': 0, 'base': 11},
+                          'central europe': {'offset': 0, 'base': 13},
+                          'australia': {'offset': 0, 'base': 15}
+                          }
+    db.settings.insert_one(day_light_settings)
+    return day_light_settings
+
+
+def get_timezone_col(timezone):
+    time = timezones.get(timezone)
+    return time.get('base') + time.get('offset')
 
 
 def get_tomorrows_date():
@@ -332,7 +353,7 @@ async def on_command_error(ctx, error):
         print(error)
         logger.error('{}: MESSAGE: {}'.format(error, ctx.message.content))
 
-
+timezones = load_daylight_settings()
 scheduled_mvp.start()
 try:
     bot.run(token)
