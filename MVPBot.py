@@ -342,6 +342,27 @@ async def whitelist_list(ctx):
     await ctx.send(formatted_string)
 
 
+@bot.command(name='daylight_savings', help='Move a timezone forward or backward an hour for daylight savings')
+@commands.check(channel_check)
+async def daylight_savings(ctx, timezone):
+    global timezones
+    day_light_settings = load_daylight_settings()
+    timezone = timezone.lower()
+    if day_light_settings.get(timezone):
+        timezone_info = day_light_settings.get(timezone)
+        if timezone_info.get('offset') == 0:
+            timezone_info['offset'] = 1
+            await ctx.send(f'Timezone {timezone} has been updated to plus an hour')
+        else:
+            timezone_info['offset'] = 0
+            await ctx.send(f'Timezone {timezone} has been updated to minus an hour')
+        db.settings.update_one({'name': 'daylight_savings'}, {"$set": {timezone: timezone_info}})
+        # Update the settings stored as part of the script
+        timezones[timezone] = timezone_info
+    else:
+        await ctx.send(f'No timezone {timezone} exists. Valid timezones are "Pacific", "Central", "Eastern", "Central Europe", "Australia"')
+
+
 @tasks.loop(minutes=1)
 async def scheduled_mvp():
     # Get all the subscribed channels
