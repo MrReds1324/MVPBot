@@ -64,20 +64,19 @@ def get_tomorrows_date():
     return datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
 
 
-def filter_sheet(filter_start_date, mvp_sheet, search_slots=0, filter_limit=4):
+def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
     """
 
     :param filter_start_date: The date that all rows must be past
     :param mvp_sheet: The represntation of the google sheet
     :param search_slots: The number of unfilled mvp slots to find
-    :param filter_limit: The maximum number of mvp slots to be returned
     :return:
     """
-    filter_end_date = filter_start_date + timedelta(minutes=(30 * filter_limit))
     filtered_sheet = []
     open_mvp_slots = []
     next_mvp_time = None
     if len(mvp_sheet) >= 2:
+        latest_mvp = filter_start_date
         for mvp_row in mvp_sheet[2:]:
             try:
                 new_time = datetime.strptime(mvp_row[6], "%I:%M %p").time()
@@ -85,12 +84,16 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0, filter_limit=4):
                 # Start by only looking at rows past the current date
                 if new_datetime >= filter_start_date:
                     if mvp_row[4]:
-                        if new_datetime <= filter_end_date:
-                            # Calculate the how much longer until the next mvp
-                            if len(filtered_sheet) == 0:
-                                next_mvp_time = new_datetime - filter_start_date
-                            # Add the row to the sheet
-                            filtered_sheet.append(mvp_row)
+                        time_gap = new_datetime - latest_mvp
+                        # Calculate the how much longer until the next mvp
+                        if len(filtered_sheet) == 0:
+                            next_mvp_time = time_gap
+                        elif time_gap > timedelta(minutes=30):
+                            filtered_sheet.append(['MVP GAP', new_datetime - latest_mvp])
+                        # Add the row to the sheet
+                        filtered_sheet.append(mvp_row)
+                        # Save the latest mvp time to determine gaps
+                        latest_mvp = new_datetime
                     elif (not mvp_row[4] and not mvp_row[0] in ['FLAG', 'RESET']) and (search_slots and len(open_mvp_slots) < search_slots):
                         open_mvp_slots.append(mvp_row)
             except:
@@ -99,39 +102,35 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0, filter_limit=4):
     return filtered_sheet, next_mvp_time, open_mvp_slots
 
 
-def get_todays_sheet(search_slots=0, filter_limit=4):
+def get_todays_sheet(search_slots=0):
     """
     :param search_slots: The number of unfilled mvp slots to find
-    :param filter_limit: The maximum number of mvp slots to be returned
     :return:
     """
     current_date = datetime.utcnow()
-    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots, filter_limit)
+    return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
 
 
-def get_tomorrows_sheet(search_slots=0, filter_limit=4):
+def get_tomorrows_sheet(search_slots=0):
     """
     :param search_slots: The number of unfilled mvp slots to find
-    :param filter_limit: The maximum number of mvp slots to be returned
     :return:
     """
     tomorrows_date = get_tomorrows_date()
-    return filter_sheet(tomorrows_date, get_sheet_data(f'{tomorrows_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots, filter_limit)
+    return filter_sheet(tomorrows_date, get_sheet_data(f'{tomorrows_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
 
 
-def get_both_sheets(search_slots=0, filter_limit=4):
+def get_both_sheets(search_slots=0):
     """
     Get today + tomorrows google sheets filtered down
     :param search_slots: The number of unfilled mvp slots to find
-    :param filter_limit: The maximum number of mvp slots to be returned
     :return:
     """
     # If we are getting both sheets, then we are in the reset period so pass in true to todays sheet
-    current_sheet, next_mvp_time, open_slots = get_todays_sheet(search_slots, filter_limit)
+    current_sheet, next_mvp_time, open_slots = get_todays_sheet(search_slots)
 
-    # Calculate the number of slots to search for and filter limit
+    # Calculate the number of slots to search for
     search_slots = search_slots - len(open_slots) if len(open_slots) < search_slots else 0
-    filter_limit = filter_limit - len(current_sheet) if len(current_sheet) < filter_limit else 0
 
     # Add the reset time split for mvps as well as open slots
     next_date = get_tomorrows_date().strftime('%D %I:%H %p')
@@ -139,7 +138,7 @@ def get_both_sheets(search_slots=0, filter_limit=4):
     open_slots.append([next_date])
 
     # Get the mvp sheet and open slots for the next day if needed
-    next_sheet, reset_mvp_time, next_open_slots = get_tomorrows_sheet(search_slots, filter_limit)
+    next_sheet, reset_mvp_time, next_open_slots = get_tomorrows_sheet(search_slots)
     current_sheet.extend(next_sheet)
     open_slots.extend(next_open_slots)
 
