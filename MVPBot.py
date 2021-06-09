@@ -332,12 +332,22 @@ async def register_low_channel(ctx):
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def unregister_channel(ctx):
+    # Attempt to remove it from the high level mvps
     subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
     if subscribed_channel:
         db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$pull': {'registered_chs': subscribed_channel.get('_id')}})
         db.channels.delete_one({'channel_id': ctx.channel.id})
-        await ctx.send("Channel unregistered")
+        await ctx.send("Channel unregistered from high level mvps")
         return
+
+    # Attempt to remove it from the low level mvps
+    subscribed_channel = db.l_channels.find_one({'channel_id': ctx.channel.id})
+    if subscribed_channel:
+        db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$pull': {'registered_l_chs': subscribed_channel.get('_id')}})
+        db.l_channels.delete_one({'channel_id': ctx.channel.id})
+        await ctx.send("Channel unregistered from low level mvps")
+        return
+
     await ctx.send("No channel to unregister")
 
 
