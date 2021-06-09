@@ -369,7 +369,11 @@ async def whitelist_remove(ctx, guild_id):
     # Find the guild and remove their related registered channels before removing their whitelist
     guild = db.whitelist.find_one({'server_id': guild_id})
     if guild:
+        # Delete high level mvp chs
         for registered_channel in guild.get('registered_chs', []):
+            db.channels.delete_one({'_id': registered_channel})
+        # Delete low level mvp chs
+        for registered_channel in guild.get('registered_l_chs', []):
             db.channels.delete_one({'_id': registered_channel})
     db.whitelist.delete_one({'server_id': guild_id})
     await ctx.send(f"Server with the id '{guild_id}' unregistered")
