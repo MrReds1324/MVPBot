@@ -297,19 +297,34 @@ async def get_low_mvp(ctx):
     await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_low_lvl_id))
 
 
-@bot.command(name='register', help='Register a channel for the bot post MVPs to')
+@bot.command(name='register', help='Register a channel for the bot post high level MVPs to')
 @commands.has_permissions(administrator=True)
 @commands.guild_only()
 @commands.check(whitelist_check)
-async def register_channel(ctx):
+async def register_high_channel(ctx):
     subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
 
     if subscribed_channel:
-        await ctx.send("Channel already registered")
+        await ctx.send("Channel already registered for high level mvps")
         return
     registered = db.channels.insert_one({'channel_id': ctx.channel.id})
     db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$push': {'registered_chs': registered.inserted_id}})
-    await ctx.send("Channel registered")
+    await ctx.send("Channel registered for high level mvps")
+
+
+@bot.command(name='registerl', help='Register a channel for the bot post low level MVPs to')
+@commands.has_permissions(administrator=True)
+@commands.guild_only()
+@commands.check(whitelist_check)
+async def register_low_channel(ctx):
+    subscribed_channel = db.l_channels.find_one({'channel_id': ctx.channel.id})
+
+    if subscribed_channel:
+        await ctx.send("Channel already registered for low level mvps")
+        return
+    registered = db.l_channels.insert_one({'channel_id': ctx.channel.id})
+    db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$push': {'registered_l_chs': registered.inserted_id}})
+    await ctx.send("Channel registered for low level mvps")
 
 
 @bot.command(name='unregister', help='Unregister a channel for the bot post MVPs to')
