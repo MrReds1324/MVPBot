@@ -283,11 +283,18 @@ async def get_low_timeslots(ctx, search_slots=1):
     await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_low_lvl_id))
 
 
-@bot.command(name='mvp', help='Show the upcoming mvps')
+@bot.command(name='mvp', help='Shows the upcoming high level mvps')
 @commands.guild_only()
 @commands.check(whitelist_check)
-async def get_mvp(ctx):
-    await ctx.send(embed=build_mvp_embed(datetime.utcnow()))
+async def get_high_mvp(ctx):
+    await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_high_lvl_id))
+
+
+@bot.command(name='mvpl', help='Shows the upcoming low level mvps')
+@commands.guild_only()
+@commands.check(whitelist_check)
+async def get_low_mvp(ctx):
+    await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_low_lvl_id))
 
 
 @bot.command(name='register', help='Register a channel for the bot post MVPs to')
