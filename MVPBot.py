@@ -269,11 +269,18 @@ async def on_message(message):
         return
 
 
-@bot.command(name='timeslots', help='Show the next X available timeslots')
+@bot.command(name='timeslots', help='Show the next X available timeslots for high level mvps')
 @commands.guild_only()
 @commands.check(whitelist_check)
-async def get_timeslots(ctx, search_slots=1):
-    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots))
+async def get_high_timeslots(ctx, search_slots=1):
+    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_high_lvl_id))
+
+
+@bot.command(name='timeslotsl', help='Show the next X available timeslots for low level mvps')
+@commands.guild_only()
+@commands.check(whitelist_check)
+async def get_low_timeslots(ctx, search_slots=1):
+    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_low_lvl_id))
 
 
 @bot.command(name='mvp', help='Show the upcoming mvps')
