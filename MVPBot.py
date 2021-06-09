@@ -411,27 +411,33 @@ async def daylight_savings(ctx, timezone):
 
 @tasks.loop(minutes=1)
 async def scheduled_mvp():
-    # Get all the subscribed channels
-    subscribed_channels = db.channels.find({})
+
     # Post to all the channels
     print(f'{datetime.utcnow()} - Posting to all channels')
-    embed = build_mvp_embed(datetime.utcnow())
-    for ch_obj in subscribed_channels:
-        message_channel = bot.get_channel(ch_obj.get('channel_id'))
-        if message_channel:
-            try:
-                last_message = await message_channel.fetch_message(message_channel.last_message_id)
-            except:
-                last_message = None
-            if last_message and last_message.author == bot.user:
-                print(f'Editing message in {ch_obj.get("channel_id")}')
-                await last_message.edit(embed=embed)
-            else:
-                print(f'Sending new message in {ch_obj.get("channel_id")}')
+    for spreadsheet_id in (spreadsheet_high_lvl_id, spreadsheet_low_lvl_id):
+        # Get all the subscribed channels based on id
+        if spreadsheet_id == spreadsheet_high_lvl_id:
+            subscribed_channels = db.channels.find({})
+        else:
+            subscribed_channels = db.l_channels.find({})
+
+        embed = build_mvp_embed(datetime.utcnow(), spreadsheet_id)
+        for ch_obj in subscribed_channels:
+            message_channel = bot.get_channel(ch_obj.get('channel_id'))
+            if message_channel:
                 try:
-                    await message_channel.send(embed=embed)
+                    last_message = await message_channel.fetch_message(message_channel.last_message_id)
                 except:
-                    print(f'Failed to send new message in {ch_obj.get("channel_id")}')
+                    last_message = None
+                if last_message and last_message.author == bot.user:
+                    print(f'Editing message in {ch_obj.get("channel_id")}')
+                    await last_message.edit(embed=embed)
+                else:
+                    print(f'Sending new message in {ch_obj.get("channel_id")}')
+                    try:
+                        await message_channel.send(embed=embed)
+                    except:
+                        print(f'Failed to send new message in {ch_obj.get("channel_id")}')
     print(f'{datetime.utcnow()} - Finished posting to all channels')
 
 
