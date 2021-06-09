@@ -18,7 +18,8 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 token = os.getenv('MVP_DISCORD_TOKEN')
-spreadsheet_id = os.getenv('SPREADSHEET_ID')
+spreadsheet_high_lvl_id = os.getenv('SPREADSHEET_HIGH_LVL_ID')
+spreadsheet_low_lvl_id = os.getenv('SPREADSHEET_LOW_LVL_ID')
 client = MongoClient(os.getenv('MONGODB_URL'))
 db = client.mvpbot
 # Default timezones to empty dictionary to be loaded later
@@ -102,8 +103,9 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
     return filtered_sheet, next_mvp_time, open_mvp_slots
 
 
-def get_todays_sheet(search_slots=0):
+def get_todays_sheet(spreadsheet_id, search_slots=0):
     """
+    :param spreadsheet_id: The id of sheet to get information from
     :param search_slots: The number of unfilled mvp slots to find
     :return:
     """
@@ -111,8 +113,9 @@ def get_todays_sheet(search_slots=0):
     return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
 
 
-def get_tomorrows_sheet(search_slots=0):
+def get_tomorrows_sheet(spreadsheet_id, search_slots=0):
     """
+    :param spreadsheet_id: The id of sheet to get information from
     :param search_slots: The number of unfilled mvp slots to find
     :return:
     """
@@ -120,14 +123,15 @@ def get_tomorrows_sheet(search_slots=0):
     return filter_sheet(tomorrows_date, get_sheet_data(f'{tomorrows_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
 
 
-def get_both_sheets(search_slots=0):
+def get_both_sheets(spreadsheet_id, search_slots=0):
     """
     Get today + tomorrows google sheets filtered down
+    :param spreadsheet_id: The id of sheet to get information from
     :param search_slots: The number of unfilled mvp slots to find
     :return:
     """
     # If we are getting both sheets, then we are in the reset period so pass in true to todays sheet
-    current_sheet, next_mvp_time, open_slots = get_todays_sheet(search_slots)
+    current_sheet, next_mvp_time, open_slots = get_todays_sheet(spreadsheet_id, search_slots)
 
     # Calculate the number of slots to search for
     search_slots = search_slots - len(open_slots) if len(open_slots) < search_slots else 0
@@ -138,7 +142,7 @@ def get_both_sheets(search_slots=0):
     open_slots.append([next_date])
 
     # Get the mvp sheet and open slots for the next day if needed
-    next_sheet, reset_mvp_time, next_open_slots = get_tomorrows_sheet(search_slots)
+    next_sheet, reset_mvp_time, next_open_slots = get_tomorrows_sheet(spreadsheet_id, search_slots)
     current_sheet.extend(next_sheet)
     open_slots.extend(next_open_slots)
 
@@ -150,7 +154,7 @@ def get_both_sheets(search_slots=0):
     return current_sheet, next_mvp_time, open_slots
 
 
-def build_tomorrow_sheet():
+def build_tomorrow_sheet(spreadsheet_id):
     tomorrow_date = get_tomorrows_date()
     if create_sheet(tomorrow_date.strftime('%D'), spreadsheet_id):
         copy_from_id = get_sheetid('Copy Me for xx15/45!', spreadsheet_id)
@@ -158,17 +162,17 @@ def build_tomorrow_sheet():
         copy_paste(copy_from_id, copy_to_id, spreadsheet_id)
 
 
-def build_mvp_embed(date_time):
+def build_mvp_embed(date_time, spreadsheet_id):
     next_day_trigger = datetime.utcnow().replace(hour=18, minute=0, second=0)
 
     if date_time >= next_day_trigger:
         # If the sheet does not exist yet - build it
         if not get_sheetid(get_tomorrows_date().strftime('%D'), spreadsheet_id):
-            build_tomorrow_sheet()
+            build_tomorrow_sheet(spreadsheet_id)
 
-        sheet, next_mvp_time, open_slots = get_both_sheets()
+        sheet, next_mvp_time, open_slots = get_both_sheets(spreadsheet_id)
     else:
-        sheet, next_mvp_time, open_slots = get_todays_sheet()
+        sheet, next_mvp_time, open_slots = get_todays_sheet(spreadsheet_id)
 
     # Added check to mvp time that it is not None
     if next_mvp_time:
@@ -198,17 +202,17 @@ def build_mvp_embed(date_time):
     return sheet_embed
 
 
-def build_open_slots_embed(date_time, search_slots):
+def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
     next_day_trigger = datetime.utcnow().replace(hour=18, minute=0, second=0)
 
     if date_time >= next_day_trigger:
         # If the sheet does not exist yet - build it
         if not get_sheetid(get_tomorrows_date().strftime('%D'), spreadsheet_id):
-            build_tomorrow_sheet()
+            build_tomorrow_sheet(spreadsheet_id)
 
-        sheet, next_mvp_time, open_slots = get_both_sheets(search_slots)
+        sheet, next_mvp_time, open_slots = get_both_sheets(spreadsheet_id, search_slots)
     else:
-        sheet, next_mvp_time, open_slots = get_todays_sheet(search_slots)
+        sheet, next_mvp_time, open_slots = get_todays_sheet(spreadsheet_id, search_slots)
 
     # Added check to mvp time that it is not None
     if next_mvp_time:
