@@ -180,7 +180,12 @@ def build_mvp_embed(date_time, spreadsheet_id):
     else:
         next_mvp_parts = ['--', '--', '--']
 
-    sheet_embed = Embed(title=f'Upcoming MVPs - {date_time.strftime("%D %I:%M %p")} UTC',
+    if spreadsheet_id == spreadsheet_high_lvl_id:
+        level_text = 'High'
+    else:
+        level_text = 'Low'
+
+    sheet_embed = Embed(title=f'Upcoming {level_text} Level MVPs - {date_time.strftime("%D %I:%M %p")} UTC',
                         description=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```')
 
     pac_col = get_timezone_col('pacific')
@@ -283,7 +288,15 @@ async def get_low_timeslots(ctx, search_slots=1):
     await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_low_lvl_id))
 
 
-@bot.command(name='mvp', help='Shows the upcoming high level mvps')
+@bot.command(name='mvp', help='Shows the upcoming mvps')
+@commands.guild_only()
+@commands.check(whitelist_check)
+async def get_mvp(ctx):
+    for spreadsheet_id in (spreadsheet_high_lvl_id, spreadsheet_low_lvl_id):
+        await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_id))
+
+
+@bot.command(name='mvph', help='Shows the upcoming low level mvps')
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_high_mvp(ctx):
