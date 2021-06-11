@@ -162,7 +162,7 @@ def build_tomorrow_sheet(spreadsheet_id):
         copy_paste(copy_from_id, copy_to_id, spreadsheet_id)
 
 
-def build_mvp_embed(date_time, spreadsheet_id):
+def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     next_day_trigger = datetime.utcnow().replace(hour=18, minute=0, second=0)
 
     if date_time >= next_day_trigger:
@@ -185,8 +185,13 @@ def build_mvp_embed(date_time, spreadsheet_id):
     else:
         level_text = 'Low'
 
-    sheet_embed = Embed(title=f'Upcoming {level_text} Level MVPs - {date_time.strftime("%D %I:%M %p")} UTC',
-                        description=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```')
+    # Create a new embed, else continue adding to the current one
+    if not sheet_embed:
+        sheet_embed = Embed(title=f'Upcoming MVPs - {date_time.strftime("%D %I:%M %p")} UTC')
+
+    sheet_embed.add_field(name=f'- - - - - - - - - - - - {level_text} Level MVPs - - - - - - - - - - - -',
+                          value=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```',
+                          inline=False)
 
     pac_col = get_timezone_col('pacific')
     east_col = get_timezone_col('eastern')
@@ -195,13 +200,14 @@ def build_mvp_embed(date_time, spreadsheet_id):
 
     for line in sheet:
         if len(line) > 2:
-            sheet_embed.add_field(name=f'{line[6]} UTC - {line[pac_col]} {col_to_tz[pac_col]} - {line[east_col]} {col_to_tz[east_col]} - {line[cen_e_col]} {col_to_tz[cen_e_col]} - {line[aus_col]} {col_to_tz[aus_col]}',
-                                  value=f'Location: {line[4]}{" --- Teleport To: " + (line[3] or line[1]) if (line[3] or line[1]) else ""}{" --- Discord: " + line[0] if line[0] else ""}',
-                                  inline=False)
+            sheet_embed.add_field(
+                name=f'{line[6]} UTC - {line[pac_col]} {col_to_tz[pac_col]} - {line[east_col]} {col_to_tz[east_col]} - {line[cen_e_col]} {col_to_tz[cen_e_col]} - {line[aus_col]} {col_to_tz[aus_col]}',
+                value=f'Location: {line[4]}{" -- Teleport To: " + (line[3] or line[1]) if (line[3] or line[1]) else ""}{" -- Discord: " + line[0] if line[0] else ""}',
+                inline=False)
         elif len(line) == 2:
             # Split the timedelta into its parts so we can easily grab the hour and minutes separately
             gap_parts = str(line[1]).split(':')
-            sheet_embed.add_field(name='- - - [BREAK] - - -', value=f'Break lasts {gap_parts[0]} hours and {gap_parts[1]} minutes', inline=False)
+            sheet_embed.add_field(name='- - - - - - - - - - - - [BREAK] - - - - - - - - - - - -', value=f'Break lasts {gap_parts[0]} hours and {gap_parts[1]} minutes', inline=False)
         else:
             sheet_embed.add_field(name=f'{line[0]} UTC', value="```yaml\nServer Reset\n```", inline=False)
     return sheet_embed
