@@ -225,12 +225,6 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
     else:
         sheet, next_mvp_time, open_slots = get_todays_sheet(spreadsheet_id, search_slots)
 
-    # Added check to mvp time that it is not None
-    if next_mvp_time:
-        next_mvp_parts = str(next_mvp_time).split(':')
-    else:
-        next_mvp_parts = ['--', '--', '--']
-
     sheet_embed = Embed(title=f'Open MVP Timeslots - {date_time.strftime("%D %I:%M %p")} UTC',
                         description=f'Showing the next {search_slots} timeslots')
 
@@ -241,9 +235,10 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
 
     for line in open_slots:
         if len(line) > 2:
-            sheet_embed.add_field(name=f'{line[6]} UTC - {line[pac_col]} {col_to_tz[pac_col]} - {line[east_col]} {col_to_tz[east_col]} - {line[cen_e_col]} {col_to_tz[cen_e_col]} - {line[aus_col]} {col_to_tz[aus_col]}',
-                                  value=f'--------------------------------------------------------------------------------------',
-                                  inline=False)
+            sheet_embed.add_field(
+                name=f'{line[6]} UTC - {line[pac_col]} {col_to_tz[pac_col]} - {line[east_col]} {col_to_tz[east_col]} - {line[cen_e_col]} {col_to_tz[cen_e_col]} - {line[aus_col]} {col_to_tz[aus_col]}',
+                value=f'--------------------------------------------------------------------------------------',
+                inline=False)
         else:
             sheet_embed.add_field(name=f'{line[0]} UTC', value="```yaml\nServer Reset\n```", inline=False)
     return sheet_embed
