@@ -298,8 +298,10 @@ async def get_low_timeslots(ctx, search_slots=1):
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_mvp(ctx):
-    for spreadsheet_id in (spreadsheet_high_lvl_id, spreadsheet_low_lvl_id):
-        await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_id))
+    filter_date = datetime.utcnow()
+    embed = build_mvp_embed(filter_date, spreadsheet_high_lvl_id)
+    embed = build_mvp_embed(filter_date, spreadsheet_low_lvl_id, embed)
+    await ctx.send(embed=embed)
 
 
 @bot.command(name='mvph', help='Shows the upcoming low level mvps')
@@ -440,7 +442,9 @@ async def scheduled_mvp():
         else:
             subscribed_channels = db.l_channels.find({})
 
-        embed = build_mvp_embed(datetime.utcnow(), spreadsheet_id)
+        filter_date = datetime.utcnow()
+        embed = build_mvp_embed(filter_date, spreadsheet_high_lvl_id)
+        embed = build_mvp_embed(filter_date, spreadsheet_low_lvl_id, embed)
         for ch_obj in subscribed_channels:
             message_channel = bot.get_channel(ch_obj.get('channel_id'))
             if message_channel:
