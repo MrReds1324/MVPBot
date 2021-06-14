@@ -321,7 +321,7 @@ async def register_high_channel(ctx):
     subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
 
     if subscribed_channel:
-        await ctx.send("Channel already registered for high level mvps")
+        await ctx.send("Channel already registered for mvps")
         return
     registered = db.channels.insert_one({'channel_id': ctx.channel.id})
     db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$push': {'registered_chs': registered.inserted_id}})
@@ -338,7 +338,7 @@ async def unregister_channel(ctx):
     if subscribed_channel:
         db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$pull': {'registered_chs': subscribed_channel.get('_id')}})
         db.channels.delete_one({'channel_id': ctx.channel.id})
-        await ctx.send("Channel unregistered from high level mvps")
+        await ctx.send("Channel unregistered from mvps")
         return
 
     # Attempt to remove it from the low level mvps
