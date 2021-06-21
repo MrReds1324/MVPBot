@@ -18,8 +18,8 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 token = os.getenv('MVP_DISCORD_TOKEN')
-spreadsheet_high_lvl_id = os.getenv('SPREADSHEET_HIGH_LVL_ID')
-spreadsheet_low_lvl_id = os.getenv('SPREADSHEET_LOW_LVL_ID')
+spreadsheet_anywhere_id = os.getenv('SPREADSHEET_HIGH_LVL_ID')
+spreadsheet_mushroom_shrine_id = os.getenv('SPREADSHEET_LOW_LVL_ID')
 client = MongoClient(os.getenv('MONGODB_URL'))
 db = client.mvpbot
 # Default timezones to empty dictionary to be loaded later
@@ -98,7 +98,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                     elif (not mvp_row[4] and not mvp_row[0] in ['FLAG', 'RESET']) and (search_slots and len(open_mvp_slots) < search_slots):
                         open_mvp_slots.append(mvp_row)
             except:
-                logger.error(f"Error occured when attempting to filter row {mvp_row}")
+                logger.error(f"Error occurred when attempting to filter row {mvp_row}")
 
     return filtered_sheet, next_mvp_time, open_mvp_slots
 
@@ -180,16 +180,16 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     else:
         next_mvp_parts = ['--', '--', '--']
 
-    if spreadsheet_id == spreadsheet_high_lvl_id:
-        level_text = 'High'
+    if spreadsheet_id == spreadsheet_anywhere_id:
+        level_text = 'Anywhere'
     else:
-        level_text = 'Low'
+        level_text = 'Mushroom Shrine'
 
     # Create a new embed, else continue adding to the current one
     if not sheet_embed:
         sheet_embed = Embed(title=f'Upcoming MVPs - {date_time.strftime("%D %I:%M %p")} UTC')
 
-    sheet_embed.add_field(name=f'- - - - - - - - - - - - {level_text} Level MVPs - - - - - - - - - - - -',
+    sheet_embed.add_field(name=f'- - - - - - - - - - - - {level_text} MVPs - - - - - - - - - - - -',
                           value=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```',
                           inline=False)
 
@@ -275,57 +275,57 @@ async def on_message(message):
         return
 
 
-@bot.command(name='timeslots', help='Show the next X available timeslots for high level mvps')
+@bot.command(name='timeslots', help='Show the next X available timeslots for Mushroom Shrine MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
-async def get_high_timeslots(ctx, search_slots=1):
-    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_high_lvl_id))
+async def get_mushroome_shrine_timeslots(ctx, search_slots=1):
+    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_mushroom_shrine_id))
 
 
-@bot.command(name='timeslotsl', help='Show the next X available timeslots for low level mvps')
+@bot.command(name='timeslotsa', help='Show the next X available timeslots for Anywhere MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
-async def get_low_timeslots(ctx, search_slots=1):
-    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_low_lvl_id))
+async def get_anywhere_timeslots(ctx, search_slots=1):
+    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_anywhere_id))
 
 
-@bot.command(name='mvp', help='Shows the upcoming mvps')
+@bot.command(name='mvp', help='Shows the upcoming MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_mvp(ctx):
     filter_date = datetime.utcnow()
-    embed = build_mvp_embed(filter_date, spreadsheet_high_lvl_id)
-    embed = build_mvp_embed(filter_date, spreadsheet_low_lvl_id, embed)
+    embed = build_mvp_embed(filter_date, spreadsheet_mushroom_shrine_id)
+    embed = build_mvp_embed(filter_date, spreadsheet_anywhere_id, embed)
     await ctx.send(embed=embed)
 
 
-@bot.command(name='mvph', help='Shows the upcoming low level mvps')
+@bot.command(name='mvpa', help='Shows the upcoming Anywhere MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
-async def get_high_mvp(ctx):
-    await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_high_lvl_id))
+async def get_anywhere_mvp(ctx):
+    await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_anywhere_id))
 
 
-@bot.command(name='mvpl', help='Shows the upcoming low level mvps')
+@bot.command(name='mvpms', help='Shows the upcoming Mushroom Shrine MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
-async def get_low_mvp(ctx):
-    await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_low_lvl_id))
+async def get_mushroom_shrine_mvp(ctx):
+    await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_mushroom_shrine_id))
 
 
-@bot.command(name='register', help='Register a channel for the bot post high level MVPs to')
+@bot.command(name='register', help='Register a channel for the bot post MVPs to')
 @commands.has_permissions(administrator=True)
 @commands.guild_only()
 @commands.check(whitelist_check)
-async def register_high_channel(ctx):
+async def register_channel(ctx):
     subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
 
     if subscribed_channel:
-        await ctx.send("Channel already registered for mvps")
+        await ctx.send("Channel already registered for MVPs")
         return
     registered = db.channels.insert_one({'channel_id': ctx.channel.id})
     db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$push': {'registered_chs': registered.inserted_id}})
-    await ctx.send("Channel registered for mvps")
+    await ctx.send("Channel registered for MVPs")
 
 
 @bot.command(name='unregister', help='Unregister a channel for the bot post MVPs to')
@@ -338,7 +338,7 @@ async def unregister_channel(ctx):
     if subscribed_channel:
         db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$pull': {'registered_chs': subscribed_channel.get('_id')}})
         db.channels.delete_one({'channel_id': ctx.channel.id})
-        await ctx.send("Channel unregistered from mvps")
+        await ctx.send("Channel unregistered from MVPs")
         return
 
     # Attempt to remove it from the low level mvps
@@ -346,7 +346,7 @@ async def unregister_channel(ctx):
     if subscribed_channel:
         db.whitelist.update_one({'server_id': str(ctx.channel.guild.id)}, {'$pull': {'registered_l_chs': subscribed_channel.get('_id')}})
         db.l_channels.delete_one({'channel_id': ctx.channel.id})
-        await ctx.send("Channel unregistered from low level mvps")
+        await ctx.send("Channel unregistered from MVPs")
         return
 
     await ctx.send("No channel to unregister")
@@ -412,35 +412,29 @@ async def daylight_savings(ctx, timezone):
 
 @tasks.loop(minutes=1)
 async def scheduled_mvp():
-
     # Post to all the channels
     print(f'{datetime.utcnow()} - Posting to all channels')
-    for spreadsheet_id in (spreadsheet_high_lvl_id, spreadsheet_low_lvl_id):
-        # Get all the subscribed channels based on id
-        if spreadsheet_id == spreadsheet_high_lvl_id:
-            subscribed_channels = db.channels.find({})
-        else:
-            subscribed_channels = db.l_channels.find({})
+    subscribed_channels = db.channels.find({})
+    filter_date = datetime.utcnow()
+    embed = build_mvp_embed(filter_date, spreadsheet_mushroom_shrine_id)
+    embed = build_mvp_embed(filter_date, spreadsheet_anywhere_id, embed)
 
-        filter_date = datetime.utcnow()
-        embed = build_mvp_embed(filter_date, spreadsheet_high_lvl_id)
-        embed = build_mvp_embed(filter_date, spreadsheet_low_lvl_id, embed)
-        for ch_obj in subscribed_channels:
-            message_channel = bot.get_channel(ch_obj.get('channel_id'))
-            if message_channel:
+    for ch_obj in subscribed_channels:
+        message_channel = bot.get_channel(ch_obj.get('channel_id'))
+        if message_channel:
+            try:
+                last_message = await message_channel.fetch_message(message_channel.last_message_id)
+            except:
+                last_message = None
+            if last_message and last_message.author == bot.user:
+                print(f'Editing message in {ch_obj.get("channel_id")}')
+                await last_message.edit(embed=embed)
+            else:
+                print(f'Sending new message in {ch_obj.get("channel_id")}')
                 try:
-                    last_message = await message_channel.fetch_message(message_channel.last_message_id)
+                    await message_channel.send(embed=embed)
                 except:
-                    last_message = None
-                if last_message and last_message.author == bot.user:
-                    print(f'Editing message in {ch_obj.get("channel_id")}')
-                    await last_message.edit(embed=embed)
-                else:
-                    print(f'Sending new message in {ch_obj.get("channel_id")}')
-                    try:
-                        await message_channel.send(embed=embed)
-                    except:
-                        print(f'Failed to send new message in {ch_obj.get("channel_id")}')
+                    print(f'Failed to send new message in {ch_obj.get("channel_id")}')
     print(f'{datetime.utcnow()} - Finished posting to all channels')
 
 
