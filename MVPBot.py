@@ -62,7 +62,7 @@ def get_timezone_col(timezone):
 
 
 def get_tomorrows_date():
-    return datetime.utcnow().replace(hour=0, minute=0, second=0) + timedelta(days=1)
+    return datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
 
 def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
@@ -157,7 +157,7 @@ def get_both_sheets(spreadsheet_id, search_slots=0):
 def build_tomorrow_sheet(spreadsheet_id):
     tomorrow_date = get_tomorrows_date()
     if create_sheet(tomorrow_date.strftime('%D'), spreadsheet_id):
-        copy_from_id = get_sheetid('Copy Me for xx15/45!', spreadsheet_id)
+        copy_from_id = get_sheetid('Copy Me!', spreadsheet_id)
         copy_to_id = get_sheetid(tomorrow_date.strftime('%D'), spreadsheet_id)
         copy_paste(copy_from_id, copy_to_id, spreadsheet_id)
 
