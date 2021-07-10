@@ -92,6 +92,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
     next_mvp_time = None
     if len(mvp_sheet) >= 2:
         latest_mvp = filter_start_date
+        current_map_ch = MVPTimes()
         for mvp_row in mvp_sheet[2:]:
             try:
                 new_time = datetime.strptime(mvp_row[6], "%I:%M %p").time()
@@ -99,20 +100,35 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                 # Start by only looking at rows past the current date
                 if new_datetime >= filter_start_date:
                     if mvp_row[4]:
+                        key_ = f'Ch {mvp_row[4]} {mvp_row[3] if mvp_row[3] else "Mushroom Shrine"}'
+                        if key_ == current_map_ch.key:
+                            current_map_ch.add(mvp_row)
+                        else:
+                            if current_map_ch.key:
+                                # Add the set of rows to the sheet and set up the new key
+                                filtered_sheet.append(current_map_ch)
+                                current_map_ch = MVPTimes()
+                            # Setup the new row
+                            current_map_ch.key = key_
+                            current_map_ch.add(mvp_row)
+
                         time_gap = new_datetime - latest_mvp
                         # Calculate the how much longer until the next mvp
                         if len(filtered_sheet) == 0:
                             next_mvp_time = time_gap
-                        elif time_gap > timedelta(minutes=30):
-                            filtered_sheet.append(['MVP GAP', new_datetime - latest_mvp])
-                        # Add the row to the sheet
-                        filtered_sheet.append(mvp_row)
+                        # elif time_gap > timedelta(minutes=30):
+                        #     filtered_sheet.append({'MVP GAP': new_datetime - latest_mvp})
+
                         # Save the latest mvp time to determine gaps
                         latest_mvp = new_datetime
-                    elif (not mvp_row[4] and not mvp_row[0] in ['FLAG', 'RESET']) and (search_slots and len(open_mvp_slots) < search_slots):
+                    elif not mvp_row[4] and len(open_mvp_slots) < search_slots:
                         open_mvp_slots.append(mvp_row)
             except:
                 logger.error(f"Error occurred when attempting to filter row {mvp_row}")
+
+        # Add the row to the sheet and set up the new key
+        if current_map_ch.key:
+            filtered_sheet.append(current_map_ch)
 
     return filtered_sheet, next_mvp_time, open_mvp_slots
 
