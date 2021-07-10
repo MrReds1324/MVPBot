@@ -168,7 +168,7 @@ def get_both_sheets(spreadsheet_id, search_slots=0):
 
     # Add the reset time split for mvps as well as open slots
     next_date = get_tomorrows_date().strftime('%D %I:%H %p')
-    current_sheet.append([next_date])
+    current_sheet.append(MVPTimes('RESET', next_date))
     open_slots.append([next_date])
 
     # Get the mvp sheet and open slots for the next day if needed
@@ -204,11 +204,17 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     else:
         sheet, next_mvp_time, open_slots = get_todays_sheet(spreadsheet_id)
 
-    # Added check to mvp time that it is not None
+    # Added check to mvp time that it is not None as well as the top_value of the embed
     if next_mvp_time:
         next_mvp_parts = str(next_mvp_time).split(':')
+
+    # This find the first ch/map combo in the list that isn't reset and makes it as the announcement
+    for slot in sheet:
+        if slot.key != 'RESET':
+            top_value = f'{":orange_circle:" if next_mvp_time > timedelta(minutes=30) else ":green_circle:"} Next MVP at {slot.key} in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
+            break
     else:
-        next_mvp_parts = ['--', '--', '--']
+        top_value = ':red_circle: Next MVP at -- in -- hours, -- minutes'
 
     if spreadsheet_id == spreadsheet_anywhere_id:
         level_text = 'Anywhere'
@@ -217,29 +223,30 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
 
     # Create a new embed, else continue adding to the current one
     if not sheet_embed:
-        sheet_embed = Embed(title=f'Upcoming MVPs - {date_time.strftime("%D %I:%M %p")} UTC')
+        sheet_embed = Embed(title=f'Upcoming MVPs • {date_time.strftime("%D %I:%M %p")} UTC')
 
     sheet_embed.add_field(name=f'- - - - - - - - - - - - {level_text} MVPs - - - - - - - - - - - -',
-                          value=f'```fix\nNext MVP in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes, and {next_mvp_parts[2][:2]} seconds\n```',
-                          inline=False)
+                          value=top_value, inline=False)
 
     pac_col = get_timezone_col('pacific')
     east_col = get_timezone_col('eastern')
     cen_e_col = get_timezone_col('central europe')
     aus_col = get_timezone_col('australia')
 
-    for line in sheet:
-        if len(line) > 2:
-            sheet_embed.add_field(
-                name=f'{line[6]} UTC - {line[pac_col]} {col_to_tz[pac_col]} - {line[east_col]} {col_to_tz[east_col]} - {line[cen_e_col]} {col_to_tz[cen_e_col]} - {line[aus_col]} {col_to_tz[aus_col]}',
-                value=f'Location: {line[4]}{" -- Teleport To: " + (line[3] or line[1]) if (line[3] or line[1]) else ""}{" -- Discord: " + line[0] if line[0] else ""}',
-                inline=False)
-        elif len(line) == 2:
-            # Split the timedelta into its parts so we can easily grab the hour and minutes separately
-            gap_parts = str(line[1]).split(':')
-            sheet_embed.add_field(name='- - - - - - - - - - - - [BREAK] - - - - - - - - - - - -', value=f'Break lasts {gap_parts[0]} hours and {gap_parts[1]} minutes', inline=False)
+    first_set = False
+    for slot in sheet:
+        if 'RESET' == slot.key:
+            sheet_embed.add_field(name='Server Reset', value=f':blue_square: {slot.mvp_times} UTC',  inline=False)
         else:
-            sheet_embed.add_field(name=f'{line[0]} UTC', value="```yaml\nServer Reset\n```", inline=False)
+            embed_value = ''
+            for mvp_time in slot.mvp_times:
+                if not first_set:
+                    first_set = True
+                    emoji = ':arrow_forward:'
+                else:
+                    emoji = ':small_orange_diamond:'
+                embed_value += f'{emoji} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - {mvp_time[cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time[aus_col]} {col_to_tz[aus_col]}\n'
+            sheet_embed.add_field(name=slot.key, value=embed_value, inline=False)
     return sheet_embed
 
 
