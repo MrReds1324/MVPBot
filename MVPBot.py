@@ -207,11 +207,13 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     # Added check to mvp time that it is not None as well as the top_value of the embed
     if next_mvp_time:
         next_mvp_parts = str(next_mvp_time).split(':')
+    else:
+        next_mvp_parts = ['--', '--']
 
     # This find the first ch/map combo in the list that isn't reset and makes it as the announcement
     for slot in sheet:
         if slot.key != 'RESET':
-            top_value = f'{":orange_circle:" if next_mvp_time > timedelta(minutes=30) else ":green_circle:"} Next MVP at {slot.key} in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
+            top_value = f'{":orange_circle:" if next_mvp_time > timedelta(minutes=30) else ":green_circle:"} Next MVP at **{slot.key}** in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
             break
     else:
         top_value = ':red_circle: Next MVP at -- in -- hours, -- minutes'
@@ -236,7 +238,7 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     first_set = False
     for slot in sheet:
         if 'RESET' == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f':blue_square: {slot.mvp_times} UTC',  inline=False)
+            sheet_embed.add_field(name='Server Reset', value=f':small_blue_diamond: {slot.mvp_times} UTC',  inline=False)
         else:
             embed_value = ''
             for mvp_time in slot.mvp_times:
