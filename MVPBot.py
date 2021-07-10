@@ -41,6 +41,20 @@ col_to_tz = {
 }
 
 
+class MVPTimes:
+    """
+    Class for storing a key: rows mapping where several time slots fall under a single ch/map
+    """
+    def __init__(self, key='', mvp_times=None):
+        if mvp_times is None:
+            mvp_times = []
+        self.key: str = key
+        self.mvp_times = mvp_times
+
+    def add(self, mvp_row):
+        self.mvp_times.append(mvp_row)
+
+
 def load_daylight_settings():
     day_light_settings = db.settings.find_one({'name': 'daylight_savings'})
     if day_light_settings:
