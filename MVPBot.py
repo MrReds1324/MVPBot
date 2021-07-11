@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
+from enum import Enum
 
 from discord import Embed, HTTPException
 from discord.ext import commands, tasks
@@ -110,11 +111,12 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
     :return:
     """
     filtered_sheet = []
-    open_mvp_slots = MVPTimes(key='Unscheduled')
+    open_mvp_slots = MVPTimes(key=SlotKey.Unscheduled.value)
     next_mvp_time = None
     if len(mvp_sheet) >= 2:
         latest_mvp = filter_start_date
         current_map_ch = MVPTimes()
+        current_gap = MVPGap()
         for mvp_row in mvp_sheet[2:]:
             try:
                 new_time = datetime.strptime(mvp_row[6], "%I:%M %p").time()
@@ -122,15 +124,19 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                 # Start by only looking at rows past the current date
                 if new_datetime >= filter_start_date:
                     if mvp_row[4]:
-                        time_gap = new_datetime - latest_mvp
                         # Calculate the how much longer until the next mvp
-                        if len(filtered_sheet) == 0 and not current_map_ch.key:
-                            next_mvp_time = time_gap
-                        # elif time_gap > timedelta(minutes=30):
-                        #     filtered_sheet.append({'MVP GAP': new_datetime - latest_mvp})
+                        if not current_map_ch.key and len(filtered_sheet) == 0:
+                            next_mvp_time = new_datetime - latest_mvp
 
                         # Save the latest mvp time to determine gaps
                         latest_mvp = new_datetime
+
+                        # If the gap is large enough to save, add the gap to the sheet and start a new one
+                        if current_gap.gap_size >= mvp_gap_size:
+                            filtered_sheet.append(current_gap)
+                            current_gap = MVPGap()
+                        else:
+                            current_gap = MVPGap()
 
                         key_ = f'Ch {mvp_row[4]} {mvp_row[3] if mvp_row[3] else "Mushroom Shrine"}'
                         # Determine if the current row matches the previously determined ones
@@ -147,14 +153,32 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                             current_map_ch.ign = mvp_row[1]
                             current_map_ch.add(mvp_row)
                     else:
+                        # Determine the gap lengths
+                        if not current_gap.start_date:
+                            current_gap.start_date = new_datetime
+                            current_gap.last_date = new_datetime
+                            current_gap.gap_size += 1
+                        else:
+                            current_gap.last_date = new_datetime
+                            current_gap.gap_size += 1
+
+                        # If the gap is large enough to save, add the current mvp set to the sheet and start a new one
+                        if current_map_ch.key and current_gap.gap_size >= mvp_gap_size:
+                            filtered_sheet.append(current_map_ch)
+                            current_map_ch = MVPTimes()
+
+                        # Add the open mvp slots if we are searching for them
                         if len(open_mvp_slots.mvp_times) < search_slots:
                             open_mvp_slots.add(mvp_row)
             except:
                 logger.error(f"Error occurred when attempting to filter row {mvp_row}")
 
-        # Add the row to the sheet and set up the new key
+        # Add the ending set of mvps if they exist
         if current_map_ch.key:
             filtered_sheet.append(current_map_ch)
+        # Add the ending gap to the sheet if it is long enough
+        if current_gap.gap_size >= mvp_gap_size:
+            filtered_sheet.append(current_gap)
 
     return filtered_sheet, next_mvp_time, [open_mvp_slots]
 
@@ -194,8 +218,9 @@ def get_both_sheets(spreadsheet_id, search_slots=0):
 
     # Add the reset time split for mvps as well as open slots
     next_date = get_tomorrows_date().strftime('%D %I:%H %p')
-    current_sheet.append(MVPTimes('RESET', next_date))
-    open_slots.append(MVPTimes('RESET', next_date))
+    reset_mvp_time = MVPTimes(SlotKey.Reset.value, next_date)
+    current_sheet.append(reset_mvp_time)
+    open_slots.append(reset_mvp_time)
 
     # Get the mvp sheet and open slots for the next day if needed
     next_sheet, reset_mvp_time, next_open_slots = get_tomorrows_sheet(spreadsheet_id, search_slots)
@@ -238,8 +263,8 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
 
     # This find the first ch/map combo in the list that isn't reset and makes it as the announcement
     for slot in sheet:
-        if slot.key != 'RESET':
-            top_value = f'{":orange_circle:" if next_mvp_time > timedelta(minutes=30) else ":green_circle:"} Next MVP at **{slot.key}** in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
+        if slot.key not in (SlotKey.Reset.value, SlotKey.Unscheduled.value):
+            top_value = f'{":orange_circle:" if next_mvp_time > mvp_gap_delta else ":green_circle:"} Next MVP at **{slot.key}** in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
             break
     else:
         top_value = ':red_circle: Next MVP at -- in -- hours, -- minutes'
@@ -263,8 +288,10 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
 
     first_set = False
     for slot in sheet:
-        if 'RESET' == slot.key:
+        if SlotKey.Reset.value == slot.key:
             sheet_embed.add_field(name='Server Reset', value=f':small_blue_diamond: {slot.mvp_times} UTC',  inline=False)
+        elif SlotKey.Unscheduled.value == slot.key:
+            sheet_embed.add_field(name='Unscheduled', value=f'{slot.start_date.strftime("%I:%M %p")} UTC -- {slot.last_date.strftime("%I:%M %p")}', inline=False)
         else:
             embed_value = ''
             for mvp_time in slot.mvp_times:
@@ -301,7 +328,7 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
     aus_col = get_timezone_col('australia')
 
     for slot in open_slots:
-        if 'RESET' == slot.key:
+        if SlotKey.Reset.value == slot.key:
             sheet_embed.add_field(name='Server Reset', value=f':small_blue_diamond: {slot.mvp_times} UTC',  inline=False)
         else:
             embed_value = ''
