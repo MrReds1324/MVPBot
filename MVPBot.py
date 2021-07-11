@@ -245,7 +245,7 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     if not sheet_embed:
         sheet_embed = Embed(title=f'Upcoming MVPs • {date_time.strftime("%D %I:%M %p")} UTC')
 
-    sheet_embed.add_field(name=f'- - - - - - - - - - - - {level_text} MVPs - - - - - - - - - - - -',
+    sheet_embed.add_field(name=f'• • • {level_text} MVPs • • •',
                           value=top_value, inline=False)
 
     pac_col = get_timezone_col('pacific')
@@ -256,7 +256,7 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     first_set = False
     for slot in sheet:
         if SlotKey.Reset.value == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f':small_blue_diamond: {slot.mvp_times} UTC',  inline=False)
+            sheet_embed.add_field(name='Server Reset', value=f'{Emojis.Info.value} {slot.mvp_times} UTC',  inline=False)
 
         elif SlotKey.Unscheduled.value == slot.key:
             sheet_embed.add_field(name='Unscheduled', value=f'{Emojis.Unscheduled.value} {slot.start_date.strftime("%I:%M %p")} UTC -- '
@@ -298,7 +298,7 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
 
     for slot in open_slots:
         if SlotKey.Reset.value == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f':small_blue_diamond: {slot.mvp_times} UTC',  inline=False)
+            sheet_embed.add_field(name='Server Reset', value=f'{Emojis.Info.value} {slot.mvp_times} UTC',  inline=False)
         else:
             embed_value = ''
             for mvp_time in slot.mvp_times:
