@@ -49,6 +49,8 @@ class MVPTimes:
         if mvp_times is None:
             mvp_times = []
         self.key: str = key
+        self.discord: str = ''
+        self.ign: str = ''
         self.mvp_times = mvp_times
 
     def add(self, mvp_row):
@@ -88,7 +90,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
     :return:
     """
     filtered_sheet = []
-    open_mvp_slots = []
+    open_mvp_slots = MVPTimes(key='Unscheduled')
     next_mvp_time = None
     if len(mvp_sheet) >= 2:
         latest_mvp = filter_start_date
@@ -124,8 +126,9 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                             current_map_ch.discord = mvp_row[0]
                             current_map_ch.ign = mvp_row[1]
                             current_map_ch.add(mvp_row)
-                    elif not mvp_row[4] and len(open_mvp_slots) < search_slots:
-                        open_mvp_slots.append(mvp_row)
+                    else:
+                        if len(open_mvp_slots.mvp_times) < search_slots:
+                            open_mvp_slots.add(mvp_row)
             except:
                 logger.error(f"Error occurred when attempting to filter row {mvp_row}")
 
@@ -133,7 +136,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
         if current_map_ch.key:
             filtered_sheet.append(current_map_ch)
 
-    return filtered_sheet, next_mvp_time, open_mvp_slots
+    return filtered_sheet, next_mvp_time, [open_mvp_slots]
 
 
 def get_todays_sheet(spreadsheet_id, search_slots=0):
@@ -172,7 +175,7 @@ def get_both_sheets(spreadsheet_id, search_slots=0):
     # Add the reset time split for mvps as well as open slots
     next_date = get_tomorrows_date().strftime('%D %I:%H %p')
     current_sheet.append(MVPTimes('RESET', next_date))
-    open_slots.append([next_date])
+    open_slots.append(MVPTimes('RESET', next_date))
 
     # Get the mvp sheet and open slots for the next day if needed
     next_sheet, reset_mvp_time, next_open_slots = get_tomorrows_sheet(spreadsheet_id, search_slots)
@@ -277,14 +280,17 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
     cen_e_col = get_timezone_col('central europe')
     aus_col = get_timezone_col('australia')
 
-    for line in open_slots:
-        if len(line) > 2:
-            sheet_embed.add_field(
-                name=f'{line[6]} UTC - {line[pac_col]} {col_to_tz[pac_col]} - {line[east_col]} {col_to_tz[east_col]} - {line[cen_e_col]} {col_to_tz[cen_e_col]} - {line[aus_col]} {col_to_tz[aus_col]}',
-                value=f'--------------------------------------------------------------------------------------',
-                inline=False)
+    for slot in open_slots:
+        if 'RESET' == slot.key:
+            sheet_embed.add_field(name='Server Reset', value=f':small_blue_diamond: {slot.mvp_times} UTC',  inline=False)
         else:
-            sheet_embed.add_field(name=f'{line[0]} UTC', value="```yaml\nServer Reset\n```", inline=False)
+            embed_value = ''
+            for mvp_time in slot.mvp_times:
+                emoji = ':small_orange_diamond:'
+                embed_value += f'{emoji} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - ' \
+                               f'{mvp_time[cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time[aus_col]} {col_to_tz[aus_col]}\n'
+            if embed_value:
+                sheet_embed.add_field(name=slot.key, value=embed_value, inline=False)
     return sheet_embed
 
 
