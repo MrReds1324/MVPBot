@@ -143,9 +143,6 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
         # Add the ending set of mvps if they exist
         if current_map_ch.key:
             filtered_sheet.append(current_map_ch)
-        # Add the ending gap to the sheet if it is long enough
-        if current_gap.gap_size >= mvp_gap_size:
-            filtered_sheet.append(current_gap)
 
     return filtered_sheet, next_mvp_time, [open_mvp_slots]
 
@@ -256,7 +253,7 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     first_set = False
     for slot in sheet:
         if SlotKey.Reset.value == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f'{Emojis.Info.value} {slot.mvp_times} UTC',  inline=False)
+            sheet_embed.add_field(name='Server Reset', value=f'{slot.mvp_times} UTC',  inline=False)
 
         elif SlotKey.Unscheduled.value == slot.key:
             sheet_embed.add_field(name='Unscheduled', value=f'{Emojis.Unscheduled.value} {slot.start_date.strftime("%I:%M %p")} UTC -- '
@@ -298,7 +295,7 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
 
     for slot in open_slots:
         if SlotKey.Reset.value == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f'{Emojis.Info.value} {slot.mvp_times} UTC',  inline=False)
+            sheet_embed.add_field(name='Server Reset', value=f'{slot.mvp_times} UTC',  inline=False)
         else:
             embed_value = ''
             for mvp_time in slot.mvp_times:
