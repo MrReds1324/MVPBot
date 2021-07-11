@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
-from enum import Enum
 
 from discord import Embed, HTTPException
 from discord.ext import commands, tasks
@@ -10,6 +9,7 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 from google_sheets import get_sheet_data, create_sheet, copy_paste, get_sheetid
+from utilities import MVPGap, MVPTimes, SlotKey, Emojis
 
 load_dotenv()
 logger = logging.getLogger('discord')
@@ -28,12 +28,6 @@ timezones = {}
 
 bot = commands.Bot(command_prefix='!!')
 
-
-class SlotKey(Enum):
-    Reset = 'Reset'
-    Unscheduled = 'Unscheduled'
-
-
 col_to_tz = {
     7: 'PST',
     8: 'PDT',
@@ -49,33 +43,6 @@ col_to_tz = {
 
 mvp_gap_size = 2
 mvp_gap_delta = timedelta(minutes=mvp_gap_size * 15)
-
-
-class MVPTimes:
-    """
-    Class for storing a key: rows mapping where several time slots fall under a single ch/map
-    """
-    def __init__(self, key='', mvp_times=None):
-        if mvp_times is None:
-            mvp_times = []
-        self.key: str = key
-        self.discord: str = ''
-        self.ign: str = ''
-        self.mvp_times = mvp_times
-
-    def add(self, mvp_row):
-        self.mvp_times.append(mvp_row)
-
-
-class MVPGap:
-    """
-    Class for storing a the start, end time, and timedelta of gaps between mvps
-    """
-    def __init__(self, start_date=None, last_date=None):
-        self.key: str = SlotKey.Unscheduled.value
-        self.start_date: datetime = start_date
-        self.last_date: datetime = last_date
-        self.gap_size: int = 0
 
 
 def load_daylight_settings():
@@ -264,10 +231,10 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     # This find the first ch/map combo in the list that isn't reset and makes it as the announcement
     for slot in sheet:
         if slot.key not in (SlotKey.Reset.value, SlotKey.Unscheduled.value):
-            top_value = f'{":orange_circle:" if next_mvp_time > mvp_gap_delta else ":green_circle:"} Next MVP at **{slot.key}** in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
+            top_value = f'{Emojis.Next.value} Next MVP at **{slot.key}** in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
             break
     else:
-        top_value = ':red_circle: Next MVP at -- in -- hours, -- minutes'
+        top_value = f'{Emojis.Stopped.value} Next MVP at -- in -- hours, -- minutes'
 
     if spreadsheet_id == spreadsheet_anywhere_id:
         level_text = 'Anywhere'
@@ -290,16 +257,18 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     for slot in sheet:
         if SlotKey.Reset.value == slot.key:
             sheet_embed.add_field(name='Server Reset', value=f':small_blue_diamond: {slot.mvp_times} UTC',  inline=False)
+
         elif SlotKey.Unscheduled.value == slot.key:
-            sheet_embed.add_field(name='Unscheduled', value=f'{slot.start_date.strftime("%I:%M %p")} UTC -- {slot.last_date.strftime("%I:%M %p")}', inline=False)
+            sheet_embed.add_field(name='Unscheduled', value=f'{Emojis.Unscheduled.value} {slot.start_date.strftime("%I:%M %p")} UTC -- '
+                                                            f'{slot.last_date.strftime("%I:%M %p")} UTC', inline=False)
         else:
             embed_value = ''
             for mvp_time in slot.mvp_times:
                 if not first_set:
                     first_set = True
-                    emoji = ':arrow_forward:'
+                    emoji = Emojis.Next.value
                 else:
-                    emoji = ':small_orange_diamond:'
+                    emoji = Emojis.Scheduled.value
                 embed_value += f'{emoji} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - ' \
                                f'{mvp_time[cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time[aus_col]} {col_to_tz[aus_col]}\n'
             sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
@@ -333,8 +302,7 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
         else:
             embed_value = ''
             for mvp_time in slot.mvp_times:
-                emoji = ':small_orange_diamond:'
-                embed_value += f'{emoji} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - ' \
+                embed_value += f'{Emojis.Unscheduled.value} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - ' \
                                f'{mvp_time[cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time[aus_col]} {col_to_tz[aus_col]}\n'
             if embed_value:
                 sheet_embed.add_field(name=slot.key, value=embed_value, inline=False)
