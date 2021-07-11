@@ -111,15 +111,18 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                         latest_mvp = new_datetime
 
                         key_ = f'Ch {mvp_row[4]} {mvp_row[3] if mvp_row[3] else "Mushroom Shrine"}'
-                        if key_ == current_map_ch.key:
+                        # Determine if the current row matches the previously determined ones
+                        if key_ == current_map_ch.key and current_map_ch.discord == mvp_row[0] and current_map_ch.ign == mvp_row[1]:
                             current_map_ch.add(mvp_row)
                         else:
                             if current_map_ch.key:
                                 # Add the set of rows to the sheet and set up the new key
                                 filtered_sheet.append(current_map_ch)
                                 current_map_ch = MVPTimes()
-                            # Setup the new row
+                            # Setup the new row/MVPTimes
                             current_map_ch.key = key_
+                            current_map_ch.discord = mvp_row[0]
+                            current_map_ch.ign = mvp_row[1]
                             current_map_ch.add(mvp_row)
                     elif not mvp_row[4] and len(open_mvp_slots) < search_slots:
                         open_mvp_slots.append(mvp_row)
@@ -247,8 +250,10 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
                     emoji = ':arrow_forward:'
                 else:
                     emoji = ':small_orange_diamond:'
-                embed_value += f'{emoji} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - {mvp_time[cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time[aus_col]} {col_to_tz[aus_col]}\n'
-            sheet_embed.add_field(name=slot.key, value=embed_value, inline=False)
+                embed_value += f'{emoji} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - ' \
+                               f'{mvp_time[cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time[aus_col]} {col_to_tz[aus_col]}\n'
+            sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
+                                  value=embed_value, inline=False)
     return sheet_embed
 
 
@@ -264,7 +269,7 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
     else:
         sheet, next_mvp_time, open_slots = get_todays_sheet(spreadsheet_id, search_slots)
 
-    sheet_embed = Embed(title=f'Open MVP Timeslots - {date_time.strftime("%D %I:%M %p")} UTC',
+    sheet_embed = Embed(title=f'Open MVP Timeslots • {date_time.strftime("%D %I:%M %p")} UTC',
                         description=f'Showing the next {search_slots} timeslots')
 
     pac_col = get_timezone_col('pacific')
@@ -488,6 +493,7 @@ async def on_command_error(ctx, error):
         print(error)
         logger.error('{}: MESSAGE: {}'.format(error, ctx.message.content))
 
+# Load the timezones once all the methods are loaded into memory
 timezones = load_daylight_settings()
 scheduled_mvp.start()
 try:
