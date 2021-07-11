@@ -27,6 +27,12 @@ timezones = {}
 
 bot = commands.Bot(command_prefix='!!')
 
+
+class SlotKey(Enum):
+    Reset = 'Reset'
+    Unscheduled = 'Unscheduled'
+
+
 col_to_tz = {
     7: 'PST',
     8: 'PDT',
@@ -39,6 +45,9 @@ col_to_tz = {
     15: 'AEST',
     16: 'AEDT',
 }
+
+mvp_gap_size = 2
+mvp_gap_delta = timedelta(minutes=mvp_gap_size * 15)
 
 
 class MVPTimes:
@@ -55,6 +64,17 @@ class MVPTimes:
 
     def add(self, mvp_row):
         self.mvp_times.append(mvp_row)
+
+
+class MVPGap:
+    """
+    Class for storing a the start, end time, and timedelta of gaps between mvps
+    """
+    def __init__(self, start_date=None, last_date=None):
+        self.key: str = SlotKey.Unscheduled.value
+        self.start_date: datetime = start_date
+        self.last_date: datetime = last_date
+        self.gap_size: int = 0
 
 
 def load_daylight_settings():
