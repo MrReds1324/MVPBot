@@ -356,12 +356,13 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
                 embed_value += f'{Emojis.Unscheduled.value} {mvp_time["dt"].strftime("%I:%M %p")} UTC • <t:{int(mvp_time["dt"].timestamp())}:t> Local Time\n'
             if embed_value:
                 sheet_embed.add_field(name=slot.key, value=embed_value, inline=False)
+
     return sheet_embed
 
 
 # Specify a special channel that have access to these commands
 def channel_check(ctx):
-    if ctx.channel.id == 737189349707350056:
+    if ctx.channel.id == 869631771707330600:
         return True
     return False
 
