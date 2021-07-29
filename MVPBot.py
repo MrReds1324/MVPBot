@@ -1,7 +1,7 @@
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from discord import Embed, HTTPException
 from discord.ext import commands, tasks
@@ -66,7 +66,7 @@ def get_timezone_col(timezone):
 
 
 def get_tomorrows_date():
-    return datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
 
 
 def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
@@ -86,8 +86,9 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
         current_gap = MVPGap()
         for mvp_row in mvp_sheet[2:]:
             try:
-                new_time = datetime.strptime(mvp_row[6], "%I:%M %p").time()
-                new_datetime = datetime.combine(filter_start_date.date(), new_time)
+                new_time = datetime.strptime(mvp_row[6], "%I:%M %p").replace(tzinfo=timezone.utc)
+                base_time = new_time.timetz()
+                new_datetime = datetime.combine(filter_start_date.date(), base_time)
                 # Start by only looking at rows past the current date
                 if new_datetime >= filter_start_date:
                     if mvp_row[4]:
@@ -153,7 +154,7 @@ def get_todays_sheet(spreadsheet_id, search_slots=0):
     :param search_slots: The number of unfilled mvp slots to find
     :return:
     """
-    current_date = datetime.utcnow()
+    current_date = datetime.now(timezone.utc)
     return filter_sheet(current_date, get_sheet_data(f'{current_date.strftime("%D")}!A:Z', spreadsheet_id), search_slots)
 
 
@@ -194,7 +195,7 @@ def get_both_sheets(spreadsheet_id, search_slots=0):
     # Determine time to next mvp around across reset boundary which is
     # Time between now and reset + the time between reset and the next mvp
     if not next_mvp_time and reset_mvp_time:
-        next_mvp_time = (get_tomorrows_date() - datetime.utcnow()) + reset_mvp_time
+        next_mvp_time = (get_tomorrows_date() - datetime.now(timezone.utc)) + reset_mvp_time
 
     return current_sheet, next_mvp_time, open_slots
 
@@ -208,7 +209,7 @@ def build_tomorrow_sheet(spreadsheet_id):
 
 
 def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
-    next_day_trigger = datetime.utcnow().replace(hour=18, minute=0, second=0)
+    next_day_trigger = datetime.now(timezone.utc).replace(hour=18, minute=0, second=0)
 
     if date_time >= next_day_trigger:
         # If the sheet does not exist yet - build it
@@ -274,7 +275,7 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
 
 
 def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
-    next_day_trigger = datetime.utcnow().replace(hour=18, minute=0, second=0)
+    next_day_trigger = datetime.now(timezone.utc).replace(hour=18, minute=0, second=0)
 
     if date_time >= next_day_trigger:
         # If the sheet does not exist yet - build it
@@ -341,21 +342,21 @@ async def on_message(message):
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_mushroome_shrine_timeslots(ctx, search_slots=1):
-    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_mushroom_shrine_id))
+    await ctx.send(embed=build_open_slots_embed(datetime.now(timezone.utc), search_slots, spreadsheet_mushroom_shrine_id))
 
 
 @bot.command(name='timeslotsa', help='Show the next X available timeslots for Anywhere MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_anywhere_timeslots(ctx, search_slots=1):
-    await ctx.send(embed=build_open_slots_embed(datetime.utcnow(), search_slots, spreadsheet_anywhere_id))
+    await ctx.send(embed=build_open_slots_embed(datetime.now(timezone.utc), search_slots, spreadsheet_anywhere_id))
 
 
 @bot.command(name='mvp', help='Shows the upcoming MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_mvp(ctx):
-    filter_date = datetime.utcnow()
+    filter_date = datetime.now(timezone.utc)
     embed = build_mvp_embed(filter_date, spreadsheet_mushroom_shrine_id)
     embed = build_mvp_embed(filter_date, spreadsheet_anywhere_id, embed)
     await ctx.send(embed=embed)
@@ -365,14 +366,14 @@ async def get_mvp(ctx):
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_anywhere_mvp(ctx):
-    await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_anywhere_id))
+    await ctx.send(embed=build_mvp_embed(datetime.now(timezone.utc), spreadsheet_anywhere_id))
 
 
 @bot.command(name='mvpms', help='Shows the upcoming Mushroom Shrine MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_mushroom_shrine_mvp(ctx):
-    await ctx.send(embed=build_mvp_embed(datetime.utcnow(), spreadsheet_mushroom_shrine_id))
+    await ctx.send(embed=build_mvp_embed(datetime.now(timezone.utc), spreadsheet_mushroom_shrine_id))
 
 
 @bot.command(name='register', help='Register a channel for the bot post MVPs to')
@@ -475,9 +476,9 @@ async def daylight_savings(ctx, timezone):
 @tasks.loop(minutes=1)
 async def scheduled_mvp():
     # Post to all the channels
-    print(f'{datetime.utcnow()} - Posting to all channels')
+    print(f'{datetime.now(timezone.utc)} - Posting to all channels')
     subscribed_channels = db.channels.find({})
-    filter_date = datetime.utcnow()
+    filter_date = datetime.now(timezone.utc)
     embed = build_mvp_embed(filter_date, spreadsheet_mushroom_shrine_id)
     embed = build_mvp_embed(filter_date, spreadsheet_anywhere_id, embed)
 
@@ -497,7 +498,7 @@ async def scheduled_mvp():
                     await message_channel.send(embed=embed)
                 except:
                     print(f'Failed to send new message in {ch_obj.get("channel_id")}')
-    print(f'{datetime.utcnow()} - Finished posting to all channels')
+    print(f'{datetime.now(timezone.utc)} - Finished posting to all channels')
 
 
 @bot.event
@@ -517,5 +518,5 @@ scheduled_mvp.start()
 try:
     bot.run(token)
 except Exception as e:
-    print(f'{datetime.utcnow()}: {e}', file=sys.stderr)
+    print(f'{datetime.now(timezone.utc)}: {e}', file=sys.stderr)
     sys.exit(-1)
