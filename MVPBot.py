@@ -109,7 +109,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                         key_ = f'Ch {mvp_row[4]} {mvp_row[3] if mvp_row[3] else "Mushroom Shrine"}'
                         # Determine if the current row matches the previously determined ones
                         if key_ == current_map_ch.key and current_map_ch.discord == mvp_row[0] and current_map_ch.ign == mvp_row[1]:
-                            current_map_ch.add(mvp_row)
+                            current_map_ch.add(mvp_row, new_datetime)
                         else:
                             if current_map_ch.key:
                                 # Add the set of rows to the sheet and set up the new key
@@ -119,7 +119,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                             current_map_ch.key = key_
                             current_map_ch.discord = mvp_row[0]
                             current_map_ch.ign = mvp_row[1]
-                            current_map_ch.add(mvp_row)
+                            current_map_ch.add(mvp_row, new_datetime)
                     else:
                         # Determine the gap lengths
                         if not current_gap.start_date:
@@ -137,7 +137,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
 
                         # Add the open mvp slots if we are searching for them
                         if len(open_mvp_slots.mvp_times) < search_slots:
-                            open_mvp_slots.add(mvp_row)
+                            open_mvp_slots.add(mvp_row, new_datetime)
             except:
                 logger.error(f"Error occurred when attempting to filter row {mvp_row}")
 
@@ -182,8 +182,7 @@ def get_both_sheets(spreadsheet_id, search_slots=0):
     search_slots = search_slots - len(open_slots) if len(open_slots) < search_slots else 0
 
     # Add the reset time split for mvps as well as open slots
-    next_date = get_tomorrows_date().strftime('%D %I:%H %p')
-    reset_mvp_time = MVPTimes(SlotKey.Reset.value, next_date)
+    reset_mvp_time = MVPTimes(SlotKey.Reset.value, get_tomorrows_date())
     current_sheet.append(reset_mvp_time)
     open_slots.append(reset_mvp_time)
 

@@ -24,22 +24,23 @@ class MVPTimes:
     """
     Class for storing a key: rows mapping where several time slots fall under a single ch/map
     """
-    def __init__(self, key='', mvp_times=None):
-        if mvp_times is None:
-            mvp_times = []
+
+    def __init__(self, key='', single_time=None):
         self.key: str = key
         self.discord: str = ''
         self.ign: str = ''
-        self.mvp_times = mvp_times
+        self.single_time = single_time
+        self.mvp_times = []
 
-    def add(self, mvp_row):
-        self.mvp_times.append(mvp_row)
+    def add(self, mvp_row, calculated_datetime):
+        self.mvp_times.append({'row': mvp_row, 'dt': calculated_datetime})
 
 
 class MVPGap:
     """
     Class for storing a the start, end time, and timedelta of gaps between mvps
     """
+
     def __init__(self, start_date=None, last_date=None):
         self.key: str = SlotKey.Unscheduled.value
         self.start_date: datetime = start_date
