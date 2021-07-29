@@ -361,7 +361,7 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
 
 # Specify a special channel that have access to these commands
 def channel_check(ctx):
-    if ctx.channel.id == 737189349707350056:
+    if ctx.channel.id == 869631771707330600:
         return True
     return False
 
