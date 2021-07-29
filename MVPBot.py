@@ -240,6 +240,65 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
 
     # Create a new embed, else continue adding to the current one
     if not sheet_embed:
+        sheet_embed = Embed(title=f'Upcoming MVPs • <t:{int(date_time.timestamp())}> Local Time')
+
+    sheet_embed.add_field(name=f'• • • {level_text} MVPs • • •', value=top_value, inline=False)
+
+    first_set = False
+    for slot in sheet:
+        if SlotKey.Reset.value == slot.key:
+            sheet_embed.add_field(name='Server Reset', value=f'<t:{int(slot.single_time.timestamp())}:t> Local Time',  inline=False)
+
+        elif SlotKey.Unscheduled.value == slot.key:
+            sheet_embed.add_field(name='Unscheduled', value=f'<t:{int(slot.start_date.timestamp())}:t> -- <t:{int(slot.last_date.timestamp())}:t> Local Time',
+                                  inline=False)
+        else:
+            embed_value = ''
+            for mvp_time in slot.mvp_times:
+                if not first_set:
+                    first_set = True
+                    emoji = Emojis.Next.value
+                else:
+                    emoji = Emojis.Scheduled.value
+                embed_value += f'{emoji} <t:{int(mvp_time["dt"].timestamp())}:t> Local Time\n'
+            sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " • " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
+                                  value=embed_value, inline=False)
+    return sheet_embed
+
+
+def build_mvp_embed_deprecated(date_time, spreadsheet_id, sheet_embed=None):
+    next_day_trigger = datetime.now(timezone.utc).replace(hour=18, minute=0, second=0)
+
+    if date_time >= next_day_trigger:
+        # If the sheet does not exist yet - build it
+        if not get_sheetid(get_tomorrows_date().strftime('%D'), spreadsheet_id):
+            build_tomorrow_sheet(spreadsheet_id)
+
+        sheet, next_mvp_time, open_slots = get_both_sheets(spreadsheet_id)
+    else:
+        sheet, next_mvp_time, open_slots = get_todays_sheet(spreadsheet_id)
+
+    # Added check to mvp time that it is not None as well as the top_value of the embed
+    if next_mvp_time:
+        next_mvp_parts = str(next_mvp_time).split(':')
+    else:
+        next_mvp_parts = ['--', '--']
+
+    # This find the first ch/map combo in the list that isn't reset and makes it as the announcement
+    for slot in sheet:
+        if slot.key not in (SlotKey.Reset.value, SlotKey.Unscheduled.value):
+            top_value = f'{Emojis.Next.value} Next MVP at **{slot.key}** in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
+            break
+    else:
+        top_value = f'{Emojis.Stopped.value} Next MVP at -- in -- hours, -- minutes'
+
+    if spreadsheet_id == spreadsheet_anywhere_id:
+        level_text = 'Anywhere'
+    else:
+        level_text = 'Mushroom Shrine'
+
+    # Create a new embed, else continue adding to the current one
+    if not sheet_embed:
         sheet_embed = Embed(title=f'Upcoming MVPs • {date_time.strftime("%D %I:%M %p")} UTC')
 
     sheet_embed.add_field(name=f'• • • {level_text} MVPs • • •',
@@ -253,7 +312,7 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     first_set = False
     for slot in sheet:
         if SlotKey.Reset.value == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f'{slot.mvp_times} UTC',  inline=False)
+            sheet_embed.add_field(name='Server Reset', value=f'{slot.single_time.strftime("%I:%M %p")}  UTC', inline=False)
 
         elif SlotKey.Unscheduled.value == slot.key:
             sheet_embed.add_field(name='Unscheduled', value=f'{Emojis.Unscheduled.value} {slot.start_date.strftime("%I:%M %p")} UTC -- '
@@ -266,8 +325,8 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
                     emoji = Emojis.Next.value
                 else:
                     emoji = Emojis.Scheduled.value
-                embed_value += f'{emoji} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - ' \
-                               f'{mvp_time[cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time[aus_col]} {col_to_tz[aus_col]}\n'
+                embed_value += f'{emoji} {mvp_time["row"][6]} UTC - {mvp_time["row"][pac_col]} {col_to_tz[pac_col]} - {mvp_time["row"][east_col]} {col_to_tz[east_col]} - ' \
+                               f'{mvp_time["row"][cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time["row"][aus_col]} {col_to_tz[aus_col]}\n'
             sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
                                   value=embed_value, inline=False)
     return sheet_embed
@@ -285,22 +344,16 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
     else:
         sheet, next_mvp_time, open_slots = get_todays_sheet(spreadsheet_id, search_slots)
 
-    sheet_embed = Embed(title=f'Open MVP Timeslots • {date_time.strftime("%D %I:%M %p")} UTC',
+    sheet_embed = Embed(title=f'Open MVP Timeslots • <t:{int(date_time.timestamp())}> Local Time',
                         description=f'Showing the next {search_slots} timeslots')
-
-    pac_col = get_timezone_col('pacific')
-    east_col = get_timezone_col('eastern')
-    cen_e_col = get_timezone_col('central europe')
-    aus_col = get_timezone_col('australia')
 
     for slot in open_slots:
         if SlotKey.Reset.value == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f'{slot.mvp_times} UTC',  inline=False)
+            sheet_embed.add_field(name='Server Reset', value=f'<t:{int(slot.single_time.timestamp())}:t> Local Time', inline=False)
         else:
             embed_value = ''
             for mvp_time in slot.mvp_times:
-                embed_value += f'{Emojis.Unscheduled.value} {mvp_time[6]} UTC - {mvp_time[pac_col]} {col_to_tz[pac_col]} - {mvp_time[east_col]} {col_to_tz[east_col]} - ' \
-                               f'{mvp_time[cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time[aus_col]} {col_to_tz[aus_col]}\n'
+                embed_value += f'{Emojis.Unscheduled.value} {mvp_time["dt"].strftime("%I:%M %p")} UTC • <t:{int(mvp_time["dt"].timestamp())}:t> Local Time\n'
             if embed_value:
                 sheet_embed.add_field(name=slot.key, value=embed_value, inline=False)
     return sheet_embed
@@ -356,8 +409,8 @@ async def get_anywhere_timeslots(ctx, search_slots=1):
 @commands.check(whitelist_check)
 async def get_mvp(ctx):
     filter_date = datetime.now(timezone.utc)
-    embed = build_mvp_embed(filter_date, spreadsheet_mushroom_shrine_id)
-    embed = build_mvp_embed(filter_date, spreadsheet_anywhere_id, embed)
+    embed = build_mvp_embed_deprecated(filter_date, spreadsheet_mushroom_shrine_id)
+    embed = build_mvp_embed_deprecated(filter_date, spreadsheet_anywhere_id, embed)
     await ctx.send(embed=embed)
 
 
@@ -365,14 +418,14 @@ async def get_mvp(ctx):
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_anywhere_mvp(ctx):
-    await ctx.send(embed=build_mvp_embed(datetime.now(timezone.utc), spreadsheet_anywhere_id))
+    await ctx.send(embed=build_mvp_embed_deprecated(datetime.now(timezone.utc), spreadsheet_anywhere_id))
 
 
 @bot.command(name='mvpms', help='Shows the upcoming Mushroom Shrine MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
 async def get_mushroom_shrine_mvp(ctx):
-    await ctx.send(embed=build_mvp_embed(datetime.now(timezone.utc), spreadsheet_mushroom_shrine_id))
+    await ctx.send(embed=build_mvp_embed_deprecated(datetime.now(timezone.utc), spreadsheet_mushroom_shrine_id))
 
 
 @bot.command(name='register', help='Register a channel for the bot post MVPs to')
