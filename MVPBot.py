@@ -319,16 +319,29 @@ def build_mvp_embed_deprecated(date_time, spreadsheet_id, sheet_embed=None):
                                                             f'{slot.last_date.strftime("%I:%M %p")} UTC', inline=False)
         else:
             embed_value = ''
+            overflow_value = ''
             for mvp_time in slot.mvp_times:
                 if not first_set:
                     first_set = True
                     emoji = Emojis.Next.value
                 else:
                     emoji = Emojis.Scheduled.value
-                embed_value += f'{emoji} {mvp_time["row"][6]} UTC - {mvp_time["row"][pac_col]} {col_to_tz[pac_col]} - {mvp_time["row"][east_col]} {col_to_tz[east_col]} - ' \
+
+                # Determine if the line overflows the maximum allowed characters in an embed field and overflow it onto a new block
+                current_line = f'{emoji} {mvp_time["row"][6]} UTC - {mvp_time["row"][pac_col]} {col_to_tz[pac_col]} - {mvp_time["row"][east_col]} {col_to_tz[east_col]} - ' \
                                f'{mvp_time["row"][cen_e_col]} {col_to_tz[cen_e_col]} - {mvp_time["row"][aus_col]} {col_to_tz[aus_col]}\n'
+                if len(current_line) + len(embed_value) >= 1024:
+                    overflow_value += current_line
+                else:
+                    embed_value += current_line
+
             sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
                                   value=embed_value, inline=False)
+
+            if overflow_value:  # Only show the overflow block if there is a need
+                sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
+                                      value=overflow_value, inline=False)
+
     return sheet_embed
 
 
