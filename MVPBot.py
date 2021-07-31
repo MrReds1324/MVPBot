@@ -236,7 +236,8 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     # This find the first ch/map combo in the list that isn't reset and makes it as the announcement
     for slot in sheet:
         if slot.key not in (SlotKey.Reset.value, SlotKey.Unscheduled.value):
-            top_value = f'{Emojis.Next.value} Next MVP at **{slot.key}** in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
+            top_value = f'{Emojis.Next.value} Next MVP at **{slot.key}** in ' \
+                        f'{next_mvp_parts[0] + " hours, " if next_mvp_parts[0] != "0" else ""}{next_mvp_parts[1]} minutes'
             break
     else:
         top_value = f'{Emojis.Stopped.value} Next MVP at -- in -- hours, -- minutes'
@@ -250,15 +251,15 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     if not sheet_embed:
         sheet_embed = Embed(title=f'Upcoming MVPs • <t:{int(date_time.timestamp())}> Local Time')
 
-    sheet_embed.add_field(name=f'• • • {level_text} MVPs • • •', value=top_value, inline=False)
+    sheet_embed.add_field(name=Emojis.Spacer.value, value=f'```\n{level_text} MVPs\n```\n{top_value}', inline=False)
 
     first_set = False
     for slot in sheet:
         if SlotKey.Reset.value == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f'<t:{int(slot.single_time.timestamp())}:t> Local Time',  inline=False)
+            sheet_embed.add_field(name='**Server Reset**', value=f'<t:{int(slot.single_time.timestamp())}:t> Local Time',  inline=False)
 
         elif SlotKey.Unscheduled.value == slot.key:
-            sheet_embed.add_field(name='Unscheduled', value=f'<t:{int(slot.start_date.timestamp())}:t> -- <t:{int(slot.last_date.timestamp())}:t> Local Time',
+            sheet_embed.add_field(name='**Unscheduled**', value=f'<t:{int(slot.start_date.timestamp())}:t> -- <t:{int(slot.last_date.timestamp())}:t> Local Time',
                                   inline=False)
         else:
             embed_value = ''
@@ -269,7 +270,7 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
                 else:
                     emoji = Emojis.Scheduled.value
                 embed_value += f'{emoji} <t:{int(mvp_time["dt"].timestamp())}:t> Local Time\n'
-            sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " • " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
+            sheet_embed.add_field(name=f'**{slot.key} • {"IGN: " + slot.ign + " • " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}**',
                                   value=embed_value, inline=False)
     return sheet_embed
 
@@ -295,10 +296,11 @@ def build_mvp_embed_deprecated(date_time, spreadsheet_id, sheet_embed=None):
     # This find the first ch/map combo in the list that isn't reset and makes it as the announcement
     for slot in sheet:
         if slot.key not in (SlotKey.Reset.value, SlotKey.Unscheduled.value):
-            top_value = f'{Emojis.Next.value} Next MVP at **{slot.key}** in {next_mvp_parts[0]} hours, {next_mvp_parts[1]} minutes'
+            top_value = f'{Emojis.Next.value} Next MVP at **{slot.key}** in ' \
+                        f'{next_mvp_parts[0] + " hours, " if next_mvp_parts[0] != "0" else ""}{next_mvp_parts[1]} minutes'
             break
     else:
-        top_value = f'{Emojis.Stopped.value} Next MVP at -- in -- hours, -- minutes'
+        top_value = f'{Emojis.Stopped.value} Next MVP at -- in --'
 
     if spreadsheet_id == spreadsheet_anywhere_id:
         level_text = 'Anywhere'
@@ -307,10 +309,9 @@ def build_mvp_embed_deprecated(date_time, spreadsheet_id, sheet_embed=None):
 
     # Create a new embed, else continue adding to the current one
     if not sheet_embed:
-        sheet_embed = Embed(title=f'Upcoming MVPs • {date_time.strftime("%D %I:%M %p")} UTC')
+        sheet_embed = Embed(title=f'**Upcoming MVPs • {date_time.strftime("%D %I:%M %p")} UTC**')
 
-    sheet_embed.add_field(name=f'• • • {level_text} MVPs • • •',
-                          value=top_value, inline=False)
+    sheet_embed.add_field(name=Emojis.Spacer.value, value=f'```\n{level_text} MVPs\n```\n{top_value}', inline=False)
 
     pac_col = get_timezone_col('pacific')
     east_col = get_timezone_col('eastern')
@@ -320,10 +321,10 @@ def build_mvp_embed_deprecated(date_time, spreadsheet_id, sheet_embed=None):
     first_set = False
     for slot in sheet:
         if SlotKey.Reset.value == slot.key:
-            sheet_embed.add_field(name='Server Reset', value=f'{slot.single_time.strftime("%I:%M %p")}  UTC', inline=False)
+            sheet_embed.add_field(name='**Server Reset**', value=f'{slot.single_time.strftime("%I:%M %p")}  UTC', inline=False)
 
         elif SlotKey.Unscheduled.value == slot.key:
-            sheet_embed.add_field(name='Unscheduled', value=f'{Emojis.Unscheduled.value} {slot.start_date.strftime("%I:%M %p")} UTC -- '
+            sheet_embed.add_field(name='**Unscheduled**', value=f'{Emojis.Unscheduled.value} {slot.start_date.strftime("%I:%M %p")} UTC -- '
                                                             f'{slot.last_date.strftime("%I:%M %p")} UTC', inline=False)
         else:
             embed_value = ''
@@ -343,11 +344,11 @@ def build_mvp_embed_deprecated(date_time, spreadsheet_id, sheet_embed=None):
                 else:
                     embed_value += current_line
 
-            sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
+            sheet_embed.add_field(name=f'**{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}**',
                                   value=embed_value, inline=False)
 
             if overflow_value:  # Only show the overflow block if there is a need
-                sheet_embed.add_field(name=f'{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}',
+                sheet_embed.add_field(name=f'**{slot.key} • {"IGN: " + slot.ign + " " if slot.ign else ""}{"Discord: " + slot.discord if slot.discord else ""}**',
                                       value=overflow_value, inline=False)
 
     return sheet_embed
