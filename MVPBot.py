@@ -397,6 +397,15 @@ def whitelist_check(ctx):
     return False
 
 
+def blacklist_check(ctx):
+    if ctx.author:
+        user_id = str(ctx.author.id)
+        user = db.blacklist.find_one({'user_id': user_id})
+        if user:
+            return False
+    return True
+
+
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
@@ -416,6 +425,7 @@ async def on_message(message):
 @bot.command(name='timeslots', help='Show the next X available timeslots for Mushroom Shrine MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
+@commands.check(blacklist_check)
 async def get_mushroome_shrine_timeslots(ctx, search_slots=1):
     await ctx.send(embed=build_open_slots_embed(datetime.now(timezone.utc), search_slots, spreadsheet_mushroom_shrine_id))
 
@@ -423,6 +433,7 @@ async def get_mushroome_shrine_timeslots(ctx, search_slots=1):
 @bot.command(name='timeslotsa', help='Show the next X available timeslots for Anywhere MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
+@commands.check(blacklist_check)
 async def get_anywhere_timeslots(ctx, search_slots=1):
     await ctx.send(embed=build_open_slots_embed(datetime.now(timezone.utc), search_slots, spreadsheet_anywhere_id))
 
@@ -430,6 +441,7 @@ async def get_anywhere_timeslots(ctx, search_slots=1):
 @bot.command(name='mvp', help='Shows the upcoming MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
+@commands.check(blacklist_check)
 async def get_mvp(ctx):
     filter_date = datetime.now(timezone.utc)
     embed = build_mvp_embed_deprecated(filter_date, spreadsheet_mushroom_shrine_id)
@@ -440,6 +452,7 @@ async def get_mvp(ctx):
 @bot.command(name='mvpa', help='Shows the upcoming Anywhere MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
+@commands.check(blacklist_check)
 async def get_anywhere_mvp(ctx):
     await ctx.send(embed=build_mvp_embed_deprecated(datetime.now(timezone.utc), spreadsheet_anywhere_id))
 
@@ -447,6 +460,7 @@ async def get_anywhere_mvp(ctx):
 @bot.command(name='mvpms', help='Shows the upcoming Mushroom Shrine MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
+@commands.check(blacklist_check)
 async def get_mushroom_shrine_mvp(ctx):
     await ctx.send(embed=build_mvp_embed_deprecated(datetime.now(timezone.utc), spreadsheet_mushroom_shrine_id))
 
@@ -455,6 +469,7 @@ async def get_mushroom_shrine_mvp(ctx):
 @commands.has_permissions(administrator=True)
 @commands.guild_only()
 @commands.check(whitelist_check)
+@commands.check(blacklist_check)
 async def register_channel(ctx):
     subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
 
@@ -470,6 +485,7 @@ async def register_channel(ctx):
 @commands.has_permissions(administrator=True)
 @commands.guild_only()
 @commands.check(whitelist_check)
+@commands.check(blacklist_check)
 async def unregister_channel(ctx):
     # Attempt to remove it from the high level mvps
     subscribed_channel = db.channels.find_one({'channel_id': ctx.channel.id})
@@ -516,6 +532,25 @@ async def whitelist_remove(ctx, guild_id):
             db.channels.delete_one({'_id': registered_channel})
     db.whitelist.delete_one({'server_id': guild_id})
     await ctx.send(f"Server with the id '{guild_id}' unregistered")
+
+
+@bot.command(name='blacklist_add', help='Register a user to the bot\'s blacklist - !!blacklist_add <user_id>')
+@commands.check(channel_check)
+async def blacklist_add(ctx, user_id):
+    user = db.blacklist.find_one({'user_id': user_id})
+
+    if user:
+        await ctx.send(f"User with the id '{user_id}' is already registered")
+        return
+    db.blacklist.insert_one({'user_id': user_id})
+    await ctx.send(f"Registered user with id '{user_id}' to the blacklist")
+
+
+@bot.command(name='blacklist_remove', help='Unregister a user from the bot\'s blacklist - !!blacklist_remove <user_id>')
+@commands.check(channel_check)
+async def blacklist_remove(ctx, user_id):
+    db.blacklist.delete_one({'user_id': user_id})
+    await ctx.send(f"User with the id '{user_id}' unregistered from the blacklist")
 
 
 @bot.command(name='whitelist_list', help='Show all guilds on the bot\'s whitelist')
