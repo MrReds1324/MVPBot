@@ -9,9 +9,17 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 from google_sheets import get_sheet_data, create_sheet, copy_paste, get_sheetid
-from utilities import MVPGap, MVPTimes, SlotKey, Emojis
+from utilities import MVPGap, MVPTimes, SlotKey
 
 load_dotenv()
+
+# Used to load emojis from a different server for development
+is_dev = int(os.getenv('IS_DEV') or 0)
+if is_dev:
+    from utilities import Emojis_dev as Emojis
+else:
+    from utilities import Emojis
+
 logger = logging.getLogger('discord')
 logger.setLevel(os.getenv('LOGGING_LEVEL'))
 handler = logging.FileHandler(filename='err.log', encoding='utf-8', mode='w')

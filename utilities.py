@@ -13,6 +13,21 @@ class Emojis(Enum):
     Elapsed = '<:elapsed:863827574634053713>'
     Cancelled = '<:cancelled:863827574677569536>'
     Alert = '<:alert:863827574697099284>'
+    Spacer = '<:spacer:870835185338445856>'
+
+
+class Emojis_dev(Enum):
+    Unscheduled = '<:unscheduled:863827574806151185>'
+    Stopped = '<:stopped:863827574768533545>'
+    Scheduled = '<:scheduled:863827574798286878>'
+    Notice = '<:notice:863827574906945556>'
+    Next = '<:next_dev:870844473800798268>'
+    Info = '<:info:863827574681632790>'
+    ElapsedDone = '<:elapsednone:863827574428925974>'
+    Elapsed = '<:elapsed:863827574634053713>'
+    Cancelled = '<:cancelled:863827574677569536>'
+    Alert = '<:alert:863827574697099284>'
+    Spacer = '<:spacer_dev:870842729779834940>'
 
 
 class SlotKey(Enum):
