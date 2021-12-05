@@ -558,7 +558,8 @@ async def blacklist_remove(ctx, user_id):
 async def whitelist_list(ctx):
     formatted_string = ''
     for server_obj in db.whitelist.find():
-        formatted_string += f'{server_obj.get("name")} | {server_obj.get("server_id")}\n'
+        if str(server_obj.get("server_id")) != "576557056832569364":
+            formatted_string += f'{server_obj.get("name")} | {server_obj.get("server_id")}\n'
     await ctx.send(formatted_string)
 
 
