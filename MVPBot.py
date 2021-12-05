@@ -384,17 +384,14 @@ def build_open_slots_embed(date_time, search_slots, spreadsheet_id):
 
 # Specify a special channel that have access to these commands
 def channel_check(ctx):
-    if ctx.channel.id == 869631771707330600:
+    if ctx.channel.id in [869631771707330600, 916906139004846120]:
         return True
     return False
 
 
 # guild must be in the whitelist to do commands
 def whitelist_check(ctx):
-    guild = db.whitelist.find_one({'server_id': str(ctx.channel.guild.id)})
-    if guild:
-        return True
-    return False
+    return True
 
 
 def blacklist_check(ctx):
