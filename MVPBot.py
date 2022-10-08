@@ -114,7 +114,7 @@ def filter_sheet(filter_start_date, mvp_sheet, search_slots=0):
                         else:
                             current_gap = MVPGap()
 
-                        key_ = f'Ch {mvp_row[4]} {mvp_row[3] if mvp_row[3] else "Mushroom Shrine"}'
+                        key_ = f'Ch {mvp_row[4]} {mvp_row[3] if mvp_row[3] else "Culvert Entrance"}'
                         # Determine if the current row matches the previously determined ones
                         if key_ == current_map_ch.key and current_map_ch.discord == mvp_row[0] and current_map_ch.ign == mvp_row[1]:
                             current_map_ch.add(mvp_row, new_datetime)
@@ -245,7 +245,7 @@ def build_mvp_embed(date_time, spreadsheet_id, sheet_embed=None):
     if spreadsheet_id == spreadsheet_anywhere_id:
         level_text = 'Anywhere'
     else:
-        level_text = 'Mushroom Shrine'
+        level_text = 'Culvert Entrance'
 
     # Create a new embed, else continue adding to the current one
     if not sheet_embed:
@@ -305,7 +305,7 @@ def build_mvp_embed_deprecated(date_time, spreadsheet_id, sheet_embed=None):
     if spreadsheet_id == spreadsheet_anywhere_id:
         level_text = 'Anywhere'
     else:
-        level_text = 'Mushroom Shrine'
+        level_text = 'Culvert Entrance'
 
     # Create a new embed, else continue adding to the current one
     if not sheet_embed:
@@ -419,7 +419,7 @@ async def on_message(message):
         return
 
 
-@bot.command(name='timeslots', help='Show the next X available timeslots for Mushroom Shrine MVPs')
+@bot.command(name='timeslots', help='Show the next X available timeslots for Culvert Entrance MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
 @commands.check(blacklist_check)
@@ -454,7 +454,7 @@ async def get_anywhere_mvp(ctx):
     await ctx.send(embed=build_mvp_embed_deprecated(datetime.now(timezone.utc), spreadsheet_anywhere_id))
 
 
-@bot.command(name='mvpms', help='Shows the upcoming Mushroom Shrine MVPs')
+@bot.command(name='mvpms', help='Shows the upcoming Culvert Entrance MVPs')
 @commands.guild_only()
 @commands.check(whitelist_check)
 @commands.check(blacklist_check)
