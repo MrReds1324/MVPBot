@@ -391,7 +391,10 @@ def channel_check(ctx):
 
 # guild must be in the whitelist to do commands
 def whitelist_check(ctx):
-    return True
+    guild = db.whitelist.find_one({'server_id': str(ctx.channel.guild.id)})
+    if guild:
+        return True
+    return False
 
 
 def blacklist_check(ctx):
